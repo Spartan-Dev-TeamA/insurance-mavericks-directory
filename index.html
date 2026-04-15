@@ -18,6 +18,7 @@
     --text: #f0f0f0;
     --muted: #888;
     --accent: #f5c542;
+    --red: #e05252;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,69 +46,127 @@
     height: 64px;
   }
 
-  .logo-wrap {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
+  .logo-wrap { display: flex; align-items: center; gap: 14px; }
 
   .logo-icon {
-    width: 38px;
-    height: 38px;
+    width: 38px; height: 38px;
     background: var(--green);
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    color: #000;
-    letter-spacing: 0;
+    font-size: 20px; color: #000; letter-spacing: 0;
     box-shadow: 0 0 16px var(--green-glow);
+    flex-shrink: 0;
   }
 
-  .logo-text {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 2px;
-    color: var(--text);
-    line-height: 1;
-  }
+  .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text); line-height: 1; }
+  .logo-sub  { font-size: 10px; letter-spacing: 3px; color: var(--green); text-transform: uppercase; font-weight: 500; }
 
-  .logo-sub {
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--green);
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .header-actions { display: flex; align-items: center; gap: 12px; }
 
   .stat-pill {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; font-weight: 500; color: var(--muted);
     font-family: 'DM Mono', monospace;
   }
+  .stat-pill span { color: var(--green); font-weight: 600; }
 
-  .stat-pill span {
-    color: var(--green);
-    font-weight: 600;
+  .login-btn {
+    font-size: 12px; font-weight: 600; color: #000;
+    background: var(--green); border: none;
+    padding: 7px 16px; border-radius: 6px;
+    cursor: pointer; letter-spacing: 0.5px;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
   }
+  .login-btn:hover { background: #22d660; }
+
+  .user-badge { display: flex; align-items: center; gap: 8px; }
+
+  .user-avatar-sm {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-dark), #0a3d20);
+    border: 1px solid rgba(29,185,84,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--green);
+    overflow: hidden; flex-shrink: 0; cursor: pointer;
+  }
+  .user-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+
+  .user-name-sm { font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; }
+  .user-name-sm:hover { color: var(--green); }
+
+  .logout-btn {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    background: transparent; border: 1px solid var(--border);
+    padding: 5px 10px; border-radius: 5px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .logout-btn:hover { color: var(--text); border-color: #555; }
+
+  /* ── AUTH MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(6px);
+    z-index: 300;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 36px;
+    width: 100%; max-width: 420px;
+    position: relative; margin: 16px;
+  }
+
+  .modal-close {
+    position: absolute; top: 14px; right: 14px;
+    background: transparent; border: none;
+    color: var(--muted); font-size: 22px;
+    cursor: pointer; line-height: 1;
+    padding: 4px 8px; border-radius: 4px;
+  }
+  .modal-close:hover { color: var(--text); background: var(--surface2); }
+
+  .modal-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .modal-logo .logo-icon { width: 32px; height: 32px; font-size: 16px; }
+
+  .modal-auth-tabs {
+    display: flex; background: var(--surface2);
+    border-radius: 8px; padding: 3px;
+    margin-bottom: 24px; gap: 3px;
+  }
+
+  .modal-auth-tab {
+    flex: 1; text-align: center; padding: 9px;
+    border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--muted);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    transition: all 0.2s; user-select: none;
+  }
+  .modal-auth-tab.active { background: var(--surface3); color: var(--text); }
+
+  .auth-form { display: none; }
+  .auth-form.active { display: block; }
+  .auth-form .form-group { margin-bottom: 14px; }
+
+  .auth-error {
+    background: rgba(224,82,82,0.1);
+    border: 1px solid rgba(224,82,82,0.3);
+    border-radius: 6px; padding: 10px 14px;
+    font-size: 12px; color: var(--red);
+    margin-bottom: 16px; display: none;
+  }
+  .auth-error.show { display: block; }
 
   /* ── TABS ── */
   .tabs {
-    display: flex;
-    gap: 4px;
+    display: flex; gap: 4px;
     padding: 20px 32px 0;
     border-bottom: 1px solid var(--border);
   }
@@ -115,518 +174,343 @@
   .tab {
     padding: 10px 20px;
     border-radius: 8px 8px 0 0;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.5px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.5px;
     text-transform: uppercase;
-    border: 1px solid transparent;
-    border-bottom: none;
-    transition: all 0.2s;
-    color: var(--muted);
-    background: transparent;
+    border: 1px solid transparent; border-bottom: none;
+    transition: all 0.2s; color: var(--muted); background: transparent;
   }
-
-  .tab.active {
-    background: var(--surface);
-    border-color: var(--border);
-    color: var(--green);
-  }
-
-  .tab:hover:not(.active) {
-    color: var(--text);
-  }
+  .tab.active { background: var(--surface); border-color: var(--border); color: var(--green); }
+  .tab:hover:not(.active) { color: var(--text); }
 
   /* ── MAIN ── */
-  .main {
-    padding: 28px 32px;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
+  .main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
   .panel { display: none; }
   .panel.active { display: block; }
 
   /* ── FILTERS ── */
-  .filters {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-    align-items: center;
-  }
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
 
   .search-input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 16px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    outline: none;
-    width: 240px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 16px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; outline: none; width: 240px;
     transition: border-color 0.2s;
   }
-
-  .search-input:focus {
-    border-color: var(--green);
-  }
-
+  .search-input:focus { border-color: var(--green); }
   .search-input::placeholder { color: var(--muted); }
 
   select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 14px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    outline: none;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 14px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none;
     padding-right: 28px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
+    background-repeat: no-repeat; background-position: right 10px center;
     transition: border-color 0.2s;
   }
-
   select:focus { border-color: var(--green); }
 
-  .filter-count {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
-
+  .filter-count { margin-left: auto; font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
   .filter-count span { color: var(--green); font-weight: 600; }
 
   /* ── MEMBER GRID ── */
-  .member-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-  }
+  .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 
   .member-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
     transition: border-color 0.2s, transform 0.2s;
     animation: fadeUp 0.35s ease both;
   }
-
-  .member-card:hover {
-    border-color: rgba(29,185,84,0.35);
-    transform: translateY(-2px);
-  }
+  .member-card:hover { border-color: rgba(29,185,84,0.35); transform: translateY(-2px); }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
+  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 
   .avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
+    width: 44px; height: 44px; border-radius: 50%;
     background: linear-gradient(135deg, var(--green-dark), #0a3d20);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    color: var(--green);
-    flex-shrink: 0;
-    border: 1px solid rgba(29,185,84,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--green);
+    flex-shrink: 0; border: 1px solid rgba(29,185,84,0.3);
+    overflow: hidden;
   }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-  .card-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    line-height: 1.2;
-  }
-
-  .card-location {
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    margin-top: 2px;
-  }
+  .card-name     { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.2; }
+  .card-location { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
 
   .card-section-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-bottom: 6px;
-    margin-top: 12px;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--muted);
+    font-weight: 600; margin-bottom: 6px; margin-top: 12px;
   }
 
-  .tag-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
 
-  .tag {
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-weight: 500;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.3px;
-  }
-
-  .tag-state {
-    background: rgba(29,185,84,0.12);
-    color: var(--green);
-    border: 1px solid rgba(29,185,84,0.25);
-  }
-
-  .tag-lob {
-    background: rgba(245,197,66,0.1);
-    color: var(--accent);
-    border: 1px solid rgba(245,197,66,0.2);
-  }
-
-  .tag-spec {
-    background: rgba(255,255,255,0.05);
-    color: #bbb;
-    border: 1px solid var(--border);
-  }
+  .tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500; font-family: 'DM Mono', monospace; letter-spacing: 0.3px; }
+  .tag-state { background: rgba(29,185,84,0.12); color: var(--green); border: 1px solid rgba(29,185,84,0.25); }
+  .tag-lob   { background: rgba(245,197,66,0.1);  color: var(--accent); border: 1px solid rgba(245,197,66,0.2); }
+  .tag-spec  { background: rgba(255,255,255,0.05); color: #bbb; border: 1px solid var(--border); }
 
   .card-footer {
-    margin-top: 14px;
-    padding-top: 12px;
+    margin-top: 14px; padding-top: 12px;
     border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
   }
-
-  .member-since {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
+  .member-since { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
 
   .contact-btn {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--green);
-    cursor: pointer;
-    background: transparent;
+    font-size: 11px; font-weight: 600; color: var(--green);
+    cursor: pointer; background: transparent;
     border: 1px solid rgba(29,185,84,0.3);
-    padding: 4px 10px;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
-    transition: background 0.15s;
+    padding: 4px 10px; border-radius: 4px;
+    letter-spacing: 0.5px; transition: background 0.15s;
   }
-
-  .contact-btn:hover {
-    background: var(--green-glow);
-  }
+  .contact-btn:hover { background: var(--green-glow); }
 
   /* ── EMPTY STATE ── */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: #444; margin-bottom: 8px; }
 
-  .empty-state h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 2px;
-    color: #444;
-    margin-bottom: 8px;
-  }
-
-  /* ── FORM PANEL ── */
-  .form-container {
-    max-width: 680px;
-    margin: 0 auto;
-  }
-
-  .form-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 3px;
-    color: var(--text);
-    margin-bottom: 6px;
-  }
-
-  .form-subtitle {
-    font-size: 14px;
-    color: var(--muted);
-    margin-bottom: 32px;
-    line-height: 1.6;
-  }
-
-  .form-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 32px;
-  }
+  /* ── SHARED FORM STYLES ── */
+  .form-container { max-width: 680px; margin: 0 auto; }
+  .form-title    { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px; color: var(--text); margin-bottom: 6px; }
+  .form-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+  .form-card     { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px; }
 
   .form-section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 14px;
-    letter-spacing: 2.5px;
-    color: var(--green);
-    margin-bottom: 20px;
-    padding-bottom: 8px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+    letter-spacing: 2.5px; color: var(--green);
+    margin-bottom: 20px; padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
   }
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
   .form-row.single { grid-template-columns: 1fr; }
 
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .form-group label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
 
   .form-group input,
   .form-group textarea {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-    resize: vertical;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; outline: none;
+    transition: border-color 0.2s; resize: vertical;
   }
-
   .form-group input:focus,
-  .form-group textarea:focus {
-    border-color: var(--green);
-  }
-
+  .form-group textarea:focus { border-color: var(--green); }
   .form-group input::placeholder,
   .form-group textarea::placeholder { color: #555; }
 
   .form-section-gap { margin-top: 28px; }
 
-  /* Checkbox grid */
-  .checkbox-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
-  }
+  .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
 
   .checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; padding: 8px 10px;
+    border-radius: 6px; border: 1px solid var(--border);
     background: var(--surface2);
     transition: border-color 0.15s, background 0.15s;
     user-select: none;
   }
-
-  .checkbox-item:hover {
-    border-color: rgba(29,185,84,0.3);
-  }
-
-  .checkbox-item input[type="checkbox"] {
-    accent-color: var(--green);
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    background: var(--surface2);
-    border: none;
-    padding: 0;
-  }
-
-  .checkbox-item span {
-    font-size: 12px;
-    font-weight: 500;
-    color: #bbb;
-    line-height: 1;
-  }
-
-  .checkbox-item:has(input:checked) {
-    border-color: rgba(29,185,84,0.5);
-    background: rgba(29,185,84,0.08);
-  }
-
-  .checkbox-item:has(input:checked) span {
-    color: var(--green);
-  }
+  .checkbox-item:hover { border-color: rgba(29,185,84,0.3); }
+  .checkbox-item input[type="checkbox"] { accent-color: var(--green); width: 14px; height: 14px; flex-shrink: 0; padding: 0; border: none; }
+  .checkbox-item span { font-size: 12px; font-weight: 500; color: #bbb; line-height: 1; }
+  .checkbox-item:has(input:checked) { border-color: rgba(29,185,84,0.5); background: rgba(29,185,84,0.08); }
+  .checkbox-item:has(input:checked) span { color: var(--green); }
 
   .state-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
-    gap: 6px;
-    max-height: 240px;
-    overflow-y: auto;
-    padding-right: 4px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 6px; max-height: 240px; overflow-y: auto; padding-right: 4px;
   }
-
   .state-grid::-webkit-scrollbar { width: 4px; }
   .state-grid::-webkit-scrollbar-track { background: var(--surface); }
   .state-grid::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
   .state-chip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 7px 4px;
-    border-radius: 5px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    padding: 7px 4px; border-radius: 5px;
+    border: 1px solid var(--border); background: var(--surface2);
+    cursor: pointer; user-select: none; transition: all 0.15s;
   }
-
-  .state-chip input[type="checkbox"] {
-    display: none;
-  }
-
-  .state-chip span {
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    color: var(--muted);
-  }
-
-  .state-chip:hover { border-color: rgba(29,185,84,0.3); }
-
-  .state-chip.selected {
-    border-color: var(--green);
-    background: rgba(29,185,84,0.1);
-  }
-
+  .state-chip input[type="checkbox"] { display: none; }
+  .state-chip span { font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--muted); }
+  .state-chip:hover   { border-color: rgba(29,185,84,0.3); }
+  .state-chip.selected { border-color: var(--green); background: rgba(29,185,84,0.1); }
   .state-chip.selected span { color: var(--green); }
 
   .submit-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--green);
-    color: #000;
+    width: 100%; padding: 14px;
+    background: var(--green); color: #000;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    letter-spacing: 3px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 28px;
+    font-size: 18px; letter-spacing: 3px;
+    border: none; border-radius: 8px;
+    cursor: pointer; margin-top: 28px;
     transition: background 0.2s, transform 0.1s;
+    display: block;
   }
-
-  .submit-btn:hover { background: #22d660; transform: translateY(-1px); }
+  .submit-btn:hover  { background: #22d660; transform: translateY(-1px); }
   .submit-btn:active { transform: translateY(0); }
 
   /* ── TOAST ── */
   .toast {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    background: var(--green);
-    color: #000;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 12px 20px;
-    border-radius: 8px;
-    opacity: 0;
-    transform: translateY(10px);
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--green); color: #000;
+    font-weight: 600; font-size: 13px;
+    padding: 12px 20px; border-radius: 8px;
+    opacity: 0; transform: translateY(10px);
     transition: opacity 0.3s, transform 0.3s;
-    z-index: 999;
-    pointer-events: none;
+    z-index: 999; pointer-events: none;
   }
-
   .toast.show { opacity: 1; transform: translateY(0); }
 
   /* ── STATS BAR ── */
-  .stats-bar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
+  .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card  { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 1px; color: var(--green); line-height: 1; }
+  .stat-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ── MY PROFILE PANEL ── */
+  .profile-panel-wrap { max-width: 680px; margin: 0 auto; }
+
+  .profile-panel-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; margin-bottom: 28px; gap: 16px;
+  }
+  .profile-panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: var(--text); line-height: 1; }
+  .profile-panel-sub   { font-size: 12px; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  .danger-btn {
+    font-size: 11px; font-weight: 600; color: var(--red);
+    background: transparent; border: 1px solid rgba(224,82,82,0.3);
+    padding: 7px 12px; border-radius: 5px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+  }
+  .danger-btn:hover { background: rgba(224,82,82,0.08); border-color: rgba(224,82,82,0.5); }
+
+  /* Photo upload */
+  .photo-upload-area {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 10px;
+    padding: 24px 0 20px;
   }
 
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 20px;
+  .photo-circle {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-dark), #0a3d20);
+    border: 2px solid rgba(29,185,84,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--green);
+    overflow: hidden; cursor: pointer; position: relative;
+    transition: border-color 0.2s;
   }
+  .photo-circle:hover { border-color: var(--green); }
+  .photo-circle img   { width: 100%; height: 100%; object-fit: cover; }
 
-  .stat-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-bottom: 6px;
+  .photo-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s;
+    font-size: 10px; font-weight: 700; color: #fff;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif;
   }
+  .photo-circle:hover .photo-overlay { opacity: 1; }
 
-  .stat-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 30px;
-    letter-spacing: 1px;
-    color: var(--green);
-    line-height: 1;
-  }
+  .photo-hint { font-size: 11px; color: var(--muted); text-align: center; }
 
-  .stat-sub {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 3px;
-  }
+  /* No-profile prompt */
+  .no-profile-prompt { text-align: center; padding: 60px 20px; }
+  .no-profile-prompt h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--text); margin-bottom: 8px; }
+  .no-profile-prompt p  { color: var(--muted); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
+  .no-profile-prompt .submit-btn { max-width: 280px; margin: 0 auto; }
 
   @media (max-width: 640px) {
-    .main { padding: 16px; }
-    header { padding: 0 16px; }
-    .tabs { padding: 16px 16px 0; }
-    .stats-bar { grid-template-columns: repeat(2, 1fr); }
-    .form-row { grid-template-columns: 1fr; }
-    .filters { gap: 8px; }
-    .search-input { width: 100%; }
+    .main    { padding: 16px; }
+    header   { padding: 0 16px; }
+    .tabs    { padding: 16px 16px 0; }
+    .stats-bar   { grid-template-columns: repeat(2, 1fr); }
+    .form-row    { grid-template-columns: 1fr; }
+    .filters     { gap: 8px; }
+    .search-input{ width: 100%; }
+    .user-name-sm{ display: none; }
+    .modal       { margin: 12px; padding: 24px; }
+    .stat-pill   { display: none; }
   }
 </style>
 </head>
 <body>
 
+<!-- ── AUTH MODAL ── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuthModal()">&#x2715;</button>
+    <div class="modal-logo">
+      <div class="logo-icon">IM</div>
+      <div>
+        <div class="logo-text" style="font-size:18px;letter-spacing:1.5px;">Insurance Mavericks</div>
+        <div class="logo-sub">Member Portal</div>
+      </div>
+    </div>
+
+    <div class="modal-auth-tabs">
+      <div class="modal-auth-tab active" id="tab-login-btn"  onclick="switchAuthTab('login')">Log In</div>
+      <div class="modal-auth-tab"        id="tab-signup-btn" onclick="switchAuthTab('signup')">Sign Up</div>
+    </div>
+
+    <!-- Login form -->
+    <div class="auth-form active" id="auth-form-login">
+      <div class="auth-error" id="login-error"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="l-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Password</label>
+        <input type="password" id="l-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="submit-btn" style="margin-top:20px;font-size:15px;" onclick="doLogin()">LOG IN</button>
+    </div>
+
+    <!-- Sign Up form -->
+    <div class="auth-form" id="auth-form-signup">
+      <div class="auth-error" id="signup-error"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="s-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Password</label>
+        <input type="password" id="s-password" placeholder="Min 6 characters">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Confirm Password</label>
+        <input type="password" id="s-password2" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doSignup()">
+      </div>
+      <button class="submit-btn" style="margin-top:20px;font-size:15px;" onclick="doSignup()">CREATE ACCOUNT</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6;">
+        After signing up you'll complete your member profile to appear in the directory.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
 <header>
   <div class="logo-wrap">
     <div class="logo-icon">IM</div>
@@ -638,19 +522,26 @@
   <div class="header-actions">
     <div class="stat-pill">Members: <span id="header-count">0</span></div>
     <div class="stat-pill">States: <span id="header-states">0</span></div>
+    <button class="login-btn" id="btn-login" onclick="openAuthModal()">LOG IN</button>
+    <div class="user-badge" id="user-badge" style="display:none;">
+      <div class="user-avatar-sm" id="header-avatar" onclick="switchTab('profile')"></div>
+      <span class="user-name-sm" id="header-name" onclick="switchTab('profile')"></span>
+      <button class="logout-btn" onclick="doLogout()">Log Out</button>
+    </div>
   </div>
 </header>
 
+<!-- ── TABS ── -->
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('directory')">Directory</div>
-  <div class="tab" onclick="switchTab('onboarding')">Join / Onboard</div>
+  <div class="tab active"  data-tab="directory"  onclick="switchTab('directory')">Directory</div>
+  <div class="tab"         data-tab="onboarding" onclick="switchTab('onboarding')">Join / Onboard</div>
+  <div class="tab"         data-tab="profile"    id="tab-profile-tab" style="display:none;" onclick="switchTab('profile')">My Profile</div>
 </div>
 
 <div class="main">
 
   <!-- DIRECTORY PANEL -->
   <div class="panel active" id="panel-directory">
-
     <div class="stats-bar">
       <div class="stat-card">
         <div class="stat-label">Total Members</div>
@@ -690,7 +581,6 @@
       <h3>No Members Found</h3>
       <p>Try adjusting your filters or be the first to join the directory.</p>
     </div>
-
   </div>
 
   <!-- ONBOARDING PANEL -->
@@ -698,9 +588,7 @@
     <div class="form-container">
       <div class="form-title">Join the Directory</div>
       <div class="form-subtitle">Get found by fellow Mavericks. Submit your info so members can find referral partners, co-brokering opportunities, and licensed help across state lines.</div>
-
       <div class="form-card">
-
         <div class="form-section-title">01 — Personal Info</div>
         <div class="form-row">
           <div class="form-group">
@@ -728,7 +616,6 @@
             <input type="text" id="f-fb" placeholder="https://facebook.com/yourname">
           </div>
         </div>
-
         <div class="form-section-gap">
           <div class="form-section-title">02 — Licensed States</div>
           <div class="form-group" style="margin-bottom:0;">
@@ -736,17 +623,14 @@
             <div class="state-grid" id="state-grid"></div>
           </div>
         </div>
-
         <div class="form-section-gap">
           <div class="form-section-title">03 — Lines of Business</div>
           <div class="checkbox-grid" id="lob-grid"></div>
         </div>
-
         <div class="form-section-gap">
           <div class="form-section-title">04 — Specializations</div>
           <div class="checkbox-grid" id="spec-grid"></div>
         </div>
-
         <div class="form-section-gap">
           <div class="form-section-title">05 — About You</div>
           <div class="form-row single">
@@ -756,35 +640,369 @@
             </div>
           </div>
         </div>
-
         <button class="submit-btn" onclick="submitForm()">SUBMIT TO DIRECTORY</button>
       </div>
     </div>
   </div>
 
+  <!-- MY PROFILE PANEL -->
+  <div class="panel" id="panel-profile">
+    <div class="profile-panel-wrap">
+
+      <!-- No profile yet -->
+      <div id="no-profile-view" style="display:none;">
+        <div class="no-profile-prompt">
+          <h3>Complete Your Profile</h3>
+          <p>You're in — now add your member profile to appear in the directory and start connecting with fellow Mavericks.</p>
+          <button class="submit-btn" onclick="switchTab('onboarding')">SET UP MY PROFILE</button>
+        </div>
+      </div>
+
+      <!-- Has profile -->
+      <div id="has-profile-view" style="display:none;">
+        <div class="profile-panel-header">
+          <div>
+            <div class="profile-panel-title">My Profile</div>
+            <div class="profile-panel-sub" id="profile-panel-email"></div>
+          </div>
+          <button class="danger-btn" onclick="confirmDeleteAccount()">Delete Account</button>
+        </div>
+
+        <div class="form-card">
+          <div class="form-section-title">Profile Photo</div>
+          <div class="photo-upload-area">
+            <div class="photo-circle" id="profile-photo-circle" onclick="document.getElementById('photo-file-input').click()">
+              <div class="photo-overlay">Change</div>
+            </div>
+            <div class="photo-hint">Click to upload &bull; JPG or PNG &bull; Auto-cropped to square</div>
+            <input type="file" id="photo-file-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(this)">
+          </div>
+
+          <div class="form-section-title">01 — Personal Info</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" id="p-first" placeholder="John">
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" id="p-last" placeholder="Smith">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Agency / Company Name</label>
+              <input type="text" id="p-agency" placeholder="Smith Insurance Group">
+            </div>
+            <div class="form-group">
+              <label>Home State *</label>
+              <input type="text" id="p-homestate" placeholder="TX">
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Facebook Profile URL</label>
+              <input type="text" id="p-fb" placeholder="https://facebook.com/yourname">
+            </div>
+          </div>
+          <div class="form-section-gap">
+            <div class="form-section-title">02 — Licensed States</div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="margin-bottom:10px;">Select all states where you hold an active license</label>
+              <div class="state-grid" id="p-state-grid"></div>
+            </div>
+          </div>
+          <div class="form-section-gap">
+            <div class="form-section-title">03 — Lines of Business</div>
+            <div class="checkbox-grid" id="p-lob-grid"></div>
+          </div>
+          <div class="form-section-gap">
+            <div class="form-section-title">04 — Specializations</div>
+            <div class="checkbox-grid" id="p-spec-grid"></div>
+          </div>
+          <div class="form-section-gap">
+            <div class="form-section-title">05 — About You</div>
+            <div class="form-row single">
+              <div class="form-group">
+                <label>Brief bio</label>
+                <textarea id="p-bio" rows="3" placeholder="I specialize in..."></textarea>
+              </div>
+            </div>
+          </div>
+          <button class="submit-btn" onclick="saveProfile()">SAVE CHANGES</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
-<div class="toast" id="toast">Profile added to directory!</div>
+<div class="toast" id="toast"></div>
 
 <script>
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
-const LOBS = ["Commercial P&C","Workers Comp","General Liability","Commercial Auto","BOP","Cyber","E&O / D&O","Surety & Bonds","Personal Auto","Homeowners","Renters","Umbrella","Life Insurance","Disability","Group Benefits","Health","Medicare","Annuities"];
-const SPECS = ["Contractors","Restaurants","Trucking","Healthcare","Real Estate","Construction","Retail","Hospitality","Technology","Nonprofits","Agriculture","Manufacturing","Professional Services","High Value Homes","High Net Worth","Small Business","Veteran-Owned Biz","Franchise"];
+const LOBS   = ["Commercial P&C","Workers Comp","General Liability","Commercial Auto","BOP","Cyber","E&O / D&O","Surety & Bonds","Personal Auto","Homeowners","Renters","Umbrella","Life Insurance","Disability","Group Benefits","Health","Medicare","Annuities"];
+const SPECS  = ["Contractors","Restaurants","Trucking","Healthcare","Real Estate","Construction","Retail","Hospitality","Technology","Nonprofits","Agriculture","Manufacturing","Professional Services","High Value Homes","High Net Worth","Small Business","Veteran-Owned Biz","Franchise"];
 
-// Seed data
-let members = [
-  { id:1, first:"Marcus", last:"Webb", agency:"Webb Risk Management", home:"TX", states:["TX","OK","LA","AR"], lobs:["Commercial P&C","General Liability","BOP"], specs:["Contractors","Small Business"], bio:"Commercial specialist focused on the Gulf Coast region.", joined:"Jan 2024", fb:"" },
-  { id:2, first:"Diana", last:"Torres", agency:"Torres Insurance", home:"FL", states:["FL","GA","SC","NC"], lobs:["Personal Auto","Homeowners","Umbrella","Life Insurance"], specs:["High Value Homes","High Net Worth"], bio:"Personal lines expert serving the Southeast.", joined:"Feb 2024", fb:"" },
-  { id:3, first:"Kevin", last:"Park", agency:"Park Commercial Group", home:"CA", states:["CA","NV","AZ","OR","WA"], lobs:["Cyber","E&O / D&O","Commercial P&C","Workers Comp"], specs:["Technology","Real Estate","Professional Services"], bio:"Cyber and tech E&O specialist on the West Coast.", joined:"Mar 2024", fb:"" },
-  { id:4, first:"Shawna", last:"Briggs", agency:"Briggs Benefits", home:"OH", states:["OH","MI","IN","KY"], lobs:["Group Benefits","Health","Disability","Life Insurance"], specs:["Small Business","Manufacturing","Healthcare"], bio:"Group benefits consultant helping employers build competitive packages.", joined:"Apr 2024", fb:"" },
-  { id:5, first:"Raul", last:"Vasquez", agency:"Southwest Risk Partners", home:"AZ", states:["AZ","TX","NM","CO"], lobs:["Commercial Auto","Trucking","Workers Comp","General Liability"], specs:["Trucking","Contractors","Construction"], bio:"Transportation and heavy equipment coverage across the Southwest.", joined:"May 2024", fb:"" },
-  { id:6, first:"JoAnn", last:"Schaub", agency:"Schaub Insurance Services", home:"PA", states:["PA","NJ","NY","DE","MD"], lobs:["Personal Auto","Homeowners","Life Insurance","Medicare"], specs:["Nonprofits","High Net Worth","Small Business"], bio:"Serving families and business owners in the Mid-Atlantic.", joined:"Jun 2024", fb:"" },
+const SEED = [
+  { id:1, first:"Marcus",  last:"Webb",    agency:"Webb Risk Management",      home:"TX", states:["TX","OK","LA","AR"],       lobs:["Commercial P&C","General Liability","BOP"],                      specs:["Contractors","Small Business"],                    bio:"Commercial specialist focused on the Gulf Coast region.",              joined:"Jan 2024", fb:"" },
+  { id:2, first:"Diana",   last:"Torres",  agency:"Torres Insurance",          home:"FL", states:["FL","GA","SC","NC"],       lobs:["Personal Auto","Homeowners","Umbrella","Life Insurance"],         specs:["High Value Homes","High Net Worth"],                bio:"Personal lines expert serving the Southeast.",                        joined:"Feb 2024", fb:"" },
+  { id:3, first:"Kevin",   last:"Park",    agency:"Park Commercial Group",     home:"CA", states:["CA","NV","AZ","OR","WA"], lobs:["Cyber","E&O / D&O","Commercial P&C","Workers Comp"],            specs:["Technology","Real Estate","Professional Services"], bio:"Cyber and tech E&O specialist on the West Coast.",                   joined:"Mar 2024", fb:"" },
+  { id:4, first:"Shawna",  last:"Briggs",  agency:"Briggs Benefits",           home:"OH", states:["OH","MI","IN","KY"],      lobs:["Group Benefits","Health","Disability","Life Insurance"],         specs:["Small Business","Manufacturing","Healthcare"],       bio:"Group benefits consultant helping employers build competitive packages.", joined:"Apr 2024", fb:"" },
+  { id:5, first:"Raul",    last:"Vasquez", agency:"Southwest Risk Partners",   home:"AZ", states:["AZ","TX","NM","CO"],      lobs:["Commercial Auto","Trucking","Workers Comp","General Liability"], specs:["Trucking","Contractors","Construction"],              bio:"Transportation and heavy equipment coverage across the Southwest.",   joined:"May 2024", fb:"" },
+  { id:6, first:"JoAnn",   last:"Schaub",  agency:"Schaub Insurance Services", home:"PA", states:["PA","NJ","NY","DE","MD"], lobs:["Personal Auto","Homeowners","Life Insurance","Medicare"],       specs:["Nonprofits","High Net Worth","Small Business"],      bio:"Serving families and business owners in the Mid-Atlantic.",           joined:"Jun 2024", fb:"" },
 ];
 
-let selectedStates = [];
+// ── STORAGE ──
+function loadMembers()          { const d = localStorage.getItem('im_members');  return d ? JSON.parse(d) : [...SEED]; }
+function saveMembers(arr)       { localStorage.setItem('im_members', JSON.stringify(arr)); }
+function loadAccounts()         { const d = localStorage.getItem('im_accounts'); return d ? JSON.parse(d) : []; }
+function saveAccounts(arr)      { localStorage.setItem('im_accounts', JSON.stringify(arr)); }
+function getSession()           { return localStorage.getItem('im_session') || null; }
+function setSession(id)         { id ? localStorage.setItem('im_session', id) : localStorage.removeItem('im_session'); }
+function getPhotos()            { const d = localStorage.getItem('im_photos');   return d ? JSON.parse(d) : {}; }
+function savePhotoFor(id, url)  { const p = getPhotos(); p[id] = url; localStorage.setItem('im_photos', JSON.stringify(p)); }
+function deletePhotoFor(id)     { const p = getPhotos(); delete p[id]; localStorage.setItem('im_photos', JSON.stringify(p)); }
 
-function initStateGrid() {
-  const grid = document.getElementById('state-grid');
+let members = loadMembers();
+if(!localStorage.getItem('im_members')) saveMembers(members);
+
+let selectedStates  = [];  // onboarding form state
+let pSelectedStates = [];  // profile form state
+
+// ── AUTH MODAL ──
+function openAuthModal(tab) {
+  document.getElementById('modal-overlay').classList.add('open');
+  switchAuthTab(tab || 'login');
+  setTimeout(() => {
+    const el = document.getElementById(tab === 'signup' ? 's-email' : 'l-email');
+    if(el) el.focus();
+  }, 80);
+}
+
+function closeAuthModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  clearAuthErrors();
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if(e.target === this) closeAuthModal();
+});
+
+function switchAuthTab(tab) {
+  document.getElementById('tab-login-btn').classList.toggle('active',  tab === 'login');
+  document.getElementById('tab-signup-btn').classList.toggle('active', tab === 'signup');
+  document.getElementById('auth-form-login').classList.toggle('active',  tab === 'login');
+  document.getElementById('auth-form-signup').classList.toggle('active', tab === 'signup');
+  clearAuthErrors();
+}
+
+function clearAuthErrors() {
+  ['login-error','signup-error'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('show');
+    el.textContent = '';
+  });
+}
+
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+// ── AUTH ACTIONS ──
+function doLogin() {
+  const email    = document.getElementById('l-email').value.trim().toLowerCase();
+  const password = document.getElementById('l-password').value;
+  if(!email || !password) { showAuthError('login-error', 'Please enter your email and password.'); return; }
+  const account  = loadAccounts().find(a => a.email === email && a.password === password);
+  if(!account)            { showAuthError('login-error', 'Incorrect email or password.'); return; }
+  setSession(account.id);
+  closeAuthModal();
+  updateAuthUI();
+  showToast('Welcome back!');
+  switchTab('profile');
+}
+
+function doSignup() {
+  const email     = document.getElementById('s-email').value.trim().toLowerCase();
+  const password  = document.getElementById('s-password').value;
+  const confirm   = document.getElementById('s-password2').value;
+  if(!email || !password)        { showAuthError('signup-error', 'Please fill in all fields.'); return; }
+  if(password.length < 6)        { showAuthError('signup-error', 'Password must be at least 6 characters.'); return; }
+  if(password !== confirm)        { showAuthError('signup-error', 'Passwords do not match.'); return; }
+  const accounts  = loadAccounts();
+  if(accounts.find(a => a.email === email)) { showAuthError('signup-error', 'An account with this email already exists.'); return; }
+  const newAcct   = { id: 'acct_' + Date.now(), email, password, memberId: null };
+  accounts.push(newAcct);
+  saveAccounts(accounts);
+  setSession(newAcct.id);
+  closeAuthModal();
+  updateAuthUI();
+  showToast('Account created! Now complete your profile.');
+  switchTab('profile');
+}
+
+function doLogout() {
+  setSession(null);
+  updateAuthUI();
+  switchTab('directory');
+  showToast('Logged out.');
+}
+
+function getCurrentAccount() {
+  const id = getSession();
+  return id ? (loadAccounts().find(a => a.id === id) || null) : null;
+}
+
+function getCurrentMember() {
+  const acct = getCurrentAccount();
+  return (acct && acct.memberId) ? (members.find(m => m.id === acct.memberId) || null) : null;
+}
+
+// ── AUTH UI ──
+function updateAuthUI() {
+  const acct     = getCurrentAccount();
+  const loggedIn = !!acct;
+  document.getElementById('btn-login').style.display          = loggedIn ? 'none' : '';
+  document.getElementById('user-badge').style.display         = loggedIn ? ''     : 'none';
+  document.getElementById('tab-profile-tab').style.display    = loggedIn ? ''     : 'none';
+  if(loggedIn) {
+    const m    = getCurrentMember();
+    const name = m ? m.first + ' ' + m.last : acct.email.split('@')[0];
+    document.getElementById('header-name').textContent = name;
+    refreshHeaderAvatar(m);
+  }
+}
+
+function refreshHeaderAvatar(m) {
+  const el = document.getElementById('header-avatar');
+  if(m) {
+    const photo = getPhotos()[m.id];
+    el.innerHTML = photo
+      ? `<img src="${photo}" alt="">`
+      : (m.first[0] + (m.last[0] || '')).toUpperCase();
+  } else {
+    el.innerHTML = '?';
+  }
+}
+
+// ── MY PROFILE PANEL ──
+function loadProfilePanel() {
+  const acct = getCurrentAccount();
+  if(!acct) return;
+  document.getElementById('profile-panel-email').textContent = acct.email;
+  const m = getCurrentMember();
+  document.getElementById('no-profile-view').style.display  = m ? 'none'  : 'block';
+  document.getElementById('has-profile-view').style.display = m ? 'block' : 'none';
+  if(!m) return;
+
+  document.getElementById('p-first').value     = m.first   || '';
+  document.getElementById('p-last').value      = m.last    || '';
+  document.getElementById('p-agency').value    = m.agency  || '';
+  document.getElementById('p-homestate').value = m.home    || '';
+  document.getElementById('p-fb').value        = m.fb      || '';
+  document.getElementById('p-bio').value       = m.bio     || '';
+
+  // Photo circle
+  const circle  = document.getElementById('profile-photo-circle');
+  const photo   = getPhotos()[m.id];
+  const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
+  circle.innerHTML = photo
+    ? `<img src="${photo}" alt=""><div class="photo-overlay">Change</div>`
+    : `${initStr}<div class="photo-overlay">Upload</div>`;
+
+  // States
+  pSelectedStates.length = 0;
+  m.states.forEach(s => pSelectedStates.push(s));
+  document.querySelectorAll('#p-state-grid .state-chip').forEach(chip => {
+    const val = chip.querySelector('input').value;
+    chip.classList.toggle('selected', pSelectedStates.includes(val));
+  });
+
+  // LOBs & Specs
+  document.querySelectorAll('#p-lob-grid  input').forEach(cb => { cb.checked = m.lobs.includes(cb.value);  });
+  document.querySelectorAll('#p-spec-grid input').forEach(cb => { cb.checked = m.specs.includes(cb.value); });
+}
+
+function saveProfile() {
+  const first = document.getElementById('p-first').value.trim();
+  const last  = document.getElementById('p-last').value.trim();
+  const home  = document.getElementById('p-homestate').value.trim().toUpperCase();
+  if(!first || !last || !home) { showToast('Name and home state are required.'); return; }
+  if(!pSelectedStates.length)  { showToast('Select at least one licensed state.'); return; }
+  const lobs  = getCheckedIn('p-lob-grid');
+  if(!lobs.length)             { showToast('Select at least one line of business.'); return; }
+  const specs = getCheckedIn('p-spec-grid');
+  const m     = getCurrentMember();
+  if(!m) return;
+  const idx   = members.findIndex(x => x.id === m.id);
+  if(idx === -1) return;
+  members[idx] = { ...m, first, last,
+    agency: document.getElementById('p-agency').value.trim(),
+    home,
+    fb:  document.getElementById('p-fb').value.trim(),
+    bio: document.getElementById('p-bio').value.trim(),
+    states: [...pSelectedStates], lobs, specs
+  };
+  saveMembers(members);
+  populateFilters();
+  renderGrid();
+  updateAuthUI();
+  loadProfilePanel();
+  showToast('Profile saved!');
+}
+
+function handlePhotoUpload(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const m = getCurrentMember();
+  if(!m) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const SIZE   = 200;
+      canvas.width = canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      const min = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, SIZE, SIZE);
+      savePhotoFor(m.id, canvas.toDataURL('image/jpeg', 0.82));
+      loadProfilePanel();
+      refreshHeaderAvatar(getCurrentMember());
+      renderGrid();
+      showToast('Photo updated!');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function confirmDeleteAccount() {
+  if(!confirm('Delete your account and remove your profile from the directory? This cannot be undone.')) return;
+  const acct = getCurrentAccount();
+  if(!acct) return;
+  if(acct.memberId) {
+    members = members.filter(m => m.id !== acct.memberId);
+    saveMembers(members);
+    deletePhotoFor(acct.memberId);
+  }
+  saveAccounts(loadAccounts().filter(a => a.id !== acct.id));
+  setSession(null);
+  updateAuthUI();
+  populateFilters();
+  renderGrid();
+  switchTab('directory');
+  showToast('Account deleted.');
+}
+
+// ── GRIDS ──
+function initStateGrid(gridId, stateArr) {
+  const grid = document.getElementById(gridId);
   STATES.forEach(s => {
     const chip = document.createElement('label');
     chip.className = 'state-chip';
@@ -792,16 +1010,22 @@ function initStateGrid() {
     chip.addEventListener('click', () => {
       const cb = chip.querySelector('input');
       setTimeout(() => {
-        if(cb.checked) { chip.classList.add('selected'); if(!selectedStates.includes(s)) selectedStates.push(s); }
-        else { chip.classList.remove('selected'); selectedStates = selectedStates.filter(x=>x!==s); }
-      },0);
+        if(cb.checked) {
+          chip.classList.add('selected');
+          if(!stateArr.includes(s)) stateArr.push(s);
+        } else {
+          chip.classList.remove('selected');
+          const i = stateArr.indexOf(s);
+          if(i !== -1) stateArr.splice(i, 1);
+        }
+      }, 0);
     });
     grid.appendChild(chip);
   });
 }
 
-function initCheckboxGrid(id, items, cls) {
-  const grid = document.getElementById(id);
+function initCheckboxGrid(gridId, items) {
+  const grid = document.getElementById(gridId);
   items.forEach(item => {
     const label = document.createElement('label');
     label.className = 'checkbox-item';
@@ -810,143 +1034,161 @@ function initCheckboxGrid(id, items, cls) {
   });
 }
 
-function getChecked(id) {
-  return Array.from(document.querySelectorAll(`#${id} input:checked`)).map(c=>c.value);
+function getCheckedIn(gridId) {
+  return Array.from(document.querySelectorAll(`#${gridId} input:checked`)).map(c => c.value);
 }
 
+// ── FILTERS & STATS ──
 function populateFilters() {
-  const stateSet = new Set(members.flatMap(m=>m.states));
-  const lobSet = new Set(members.flatMap(m=>m.lobs));
+  const stateSet = new Set(members.flatMap(m => m.states));
+  const lobSet   = new Set(members.flatMap(m => m.lobs));
   const sf = document.getElementById('filter-state');
   const lf = document.getElementById('filter-lob');
+  const sv = sf.value, lv = lf.value;
   sf.innerHTML = '<option value="">All States</option>';
-  lobSet.forEach(l => { const o=document.createElement('option'); o.value=l; o.textContent=l; lf.appendChild(o); });
-  [...stateSet].sort().forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; sf.appendChild(o); });
+  lf.innerHTML = '<option value="">All Lines of Business</option>';
+  [...stateSet].sort().forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
+  [...lobSet].sort().forEach(l  => { const o = document.createElement('option'); o.value = l; o.textContent = l; lf.appendChild(o); });
+  sf.value = sv; lf.value = lv;
   updateStats();
 }
 
 function updateStats() {
-  const states = new Set(members.flatMap(m=>m.states));
-  const lobs = new Set(members.flatMap(m=>m.lobs));
-  const specs = new Set(members.flatMap(m=>m.specs));
-  document.getElementById('stat-members').textContent = members.length;
-  document.getElementById('stat-states').textContent = states.size;
-  document.getElementById('stat-lobs').textContent = lobs.size;
-  document.getElementById('stat-specs').textContent = specs.size;
-  document.getElementById('header-count').textContent = members.length;
+  const states = new Set(members.flatMap(m => m.states));
+  const lobs   = new Set(members.flatMap(m => m.lobs));
+  const specs  = new Set(members.flatMap(m => m.specs));
+  document.getElementById('stat-members').textContent  = members.length;
+  document.getElementById('stat-states').textContent   = states.size;
+  document.getElementById('stat-lobs').textContent     = lobs.size;
+  document.getElementById('stat-specs').textContent    = specs.size;
+  document.getElementById('header-count').textContent  = members.length;
   document.getElementById('header-states').textContent = states.size;
 }
 
-function initials(m) { return (m.first[0]+(m.last[0]||'')).toUpperCase(); }
-
+// ── RENDER GRID ──
 function renderGrid() {
-  const q = document.getElementById('search-input').value.toLowerCase();
-  const sf = document.getElementById('filter-state').value;
-  const lf = document.getElementById('filter-lob').value;
-  const grid = document.getElementById('member-grid');
-  const empty = document.getElementById('empty-state');
+  const q      = document.getElementById('search-input').value.toLowerCase();
+  const sf     = document.getElementById('filter-state').value;
+  const lf     = document.getElementById('filter-lob').value;
+  const grid   = document.getElementById('member-grid');
+  const empty  = document.getElementById('empty-state');
+  const photos = getPhotos();
 
-  let filtered = members.filter(m => {
-    const name = (m.first+' '+m.last+' '+(m.agency||'')).toLowerCase();
-    const matchQ = !q || name.includes(q);
-    const matchS = !sf || m.states.includes(sf);
-    const matchL = !lf || m.lobs.includes(lf);
-    return matchQ && matchS && matchL;
+  const filtered = members.filter(m => {
+    const name = (m.first + ' ' + m.last + ' ' + (m.agency || '')).toLowerCase();
+    return (!q || name.includes(q)) && (!sf || m.states.includes(sf)) && (!lf || m.lobs.includes(lf));
   });
 
   document.getElementById('visible-count').textContent = filtered.length;
-  grid.innerHTML='';
+  grid.innerHTML = '';
+  if(!filtered.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
 
-  if(!filtered.length) { empty.style.display='block'; return; }
-  empty.style.display='none';
-
-  filtered.forEach((m,i) => {
-    const card = document.createElement('div');
+  filtered.forEach((m, i) => {
+    const card    = document.createElement('div');
     card.className = 'member-card';
-    card.style.animationDelay = (i*0.04)+'s';
+    card.style.animationDelay = (i * 0.04) + 's';
+    const photo   = photos[m.id];
+    const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
     card.innerHTML = `
       <div class="card-header">
-        <div class="avatar">${initials(m)}</div>
+        <div class="avatar">${photo ? `<img src="${photo}" alt="${initStr}">` : initStr}</div>
         <div>
           <div class="card-name">${m.first} ${m.last}</div>
-          <div class="card-location">${m.agency ? m.agency+' &bull; ' : ''}${m.home}</div>
+          <div class="card-location">${m.agency ? m.agency + ' &bull; ' : ''}${m.home}</div>
         </div>
       </div>
       <div class="card-section-label">Licensed States</div>
-      <div class="tag-row">${m.states.map(s=>`<span class="tag tag-state">${s}</span>`).join('')}</div>
+      <div class="tag-row">${m.states.map(s => `<span class="tag tag-state">${s}</span>`).join('')}</div>
       <div class="card-section-label">Lines of Business</div>
-      <div class="tag-row">${m.lobs.map(l=>`<span class="tag tag-lob">${l}</span>`).join('')}</div>
-      ${m.specs.length ? `<div class="card-section-label">Specializations</div><div class="tag-row">${m.specs.map(s=>`<span class="tag tag-spec">${s}</span>`).join('')}</div>` : ''}
+      <div class="tag-row">${m.lobs.map(l => `<span class="tag tag-lob">${l}</span>`).join('')}</div>
+      ${m.specs.length ? `<div class="card-section-label">Specializations</div><div class="tag-row">${m.specs.map(s => `<span class="tag tag-spec">${s}</span>`).join('')}</div>` : ''}
       <div class="card-footer">
         <span class="member-since">Joined ${m.joined}</span>
         ${m.fb ? `<button class="contact-btn" onclick="window.open('${m.fb}','_blank')">VIEW PROFILE</button>` : '<button class="contact-btn">CONNECT</button>'}
-      </div>
-    `;
+      </div>`;
     grid.appendChild(card);
   });
 }
 
+// ── TAB SWITCHING ──
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    const names=['directory','onboarding'];
-    t.classList.toggle('active', names[i]===tab);
+  const acct = getCurrentAccount();
+  if(tab === 'profile' && !acct) { openAuthModal('login'); return; }
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  ['directory','onboarding','profile'].forEach(name => {
+    const panel = document.getElementById('panel-' + name);
+    if(panel) panel.classList.toggle('active', name === tab);
   });
-  document.getElementById('panel-directory').classList.toggle('active', tab==='directory');
-  document.getElementById('panel-onboarding').classList.toggle('active', tab==='onboarding');
+  if(tab === 'profile') loadProfilePanel();
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3200);
-}
-
+// ── ONBOARDING SUBMIT ──
 function submitForm() {
+  const acct = getCurrentAccount();
+  if(acct && acct.memberId) {
+    showToast('You already have a profile — edit it in My Profile.');
+    switchTab('profile');
+    return;
+  }
   const first = document.getElementById('f-first').value.trim();
-  const last = document.getElementById('f-last').value.trim();
-  const home = document.getElementById('f-homestate').value.trim().toUpperCase();
+  const last  = document.getElementById('f-last').value.trim();
+  const home  = document.getElementById('f-homestate').value.trim().toUpperCase();
   if(!first || !last || !home) { showToast('Please fill in name and home state.'); return; }
-  if(!selectedStates.length) { showToast('Select at least one licensed state.'); return; }
+  if(!selectedStates.length)   { showToast('Select at least one licensed state.'); return; }
+  const lobs  = getCheckedIn('lob-grid');
+  if(!lobs.length)             { showToast('Select at least one line of business.'); return; }
+  const specs  = getCheckedIn('spec-grid');
+  const now    = new Date();
+  const joined = now.toLocaleString('default', { month: 'short' }) + ' ' + now.getFullYear();
+  const newM   = {
+    id: Date.now(), first, last,
+    agency:  document.getElementById('f-agency').value.trim(),
+    home, states: [...selectedStates], lobs, specs,
+    bio:  document.getElementById('f-bio').value.trim(),
+    joined, fb: document.getElementById('f-fb').value.trim()
+  };
+  members.unshift(newM);
+  saveMembers(members);
 
-  const lobs = getChecked('lob-grid');
-  const specs = getChecked('spec-grid');
-  if(!lobs.length) { showToast('Select at least one line of business.'); return; }
+  // Link to logged-in account
+  if(acct) {
+    const accounts = loadAccounts();
+    const idx = accounts.findIndex(a => a.id === acct.id);
+    if(idx !== -1) { accounts[idx].memberId = newM.id; saveAccounts(accounts); }
+    updateAuthUI();
+  }
 
-  const now = new Date();
-  const joined = now.toLocaleString('default',{month:'short'})+' '+now.getFullYear();
-  members.unshift({
-    id: Date.now(),
-    first, last,
-    agency: document.getElementById('f-agency').value.trim(),
-    home,
-    states: [...selectedStates],
-    lobs,
-    specs,
-    bio: document.getElementById('f-bio').value.trim(),
-    joined,
-    fb: document.getElementById('f-fb').value.trim()
-  });
-
-  // Reset
-  document.querySelectorAll('#panel-onboarding input[type=text], #panel-onboarding textarea').forEach(el=>el.value='');
-  document.querySelectorAll('#panel-onboarding input[type=checkbox]').forEach(cb=>cb.checked=false);
-  document.querySelectorAll('.state-chip').forEach(c=>c.classList.remove('selected'));
-  document.querySelectorAll('.checkbox-item').forEach(c=>{ const cb=c.querySelector('input'); if(cb) cb.checked=false; });
-  selectedStates = [];
+  // Reset form
+  document.querySelectorAll('#panel-onboarding input[type=text], #panel-onboarding textarea').forEach(el => el.value = '');
+  document.querySelectorAll('#panel-onboarding input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#state-grid .state-chip').forEach(c => c.classList.remove('selected'));
+  selectedStates.length = 0;
 
   populateFilters();
   renderGrid();
   showToast('You have been added to the directory!');
-  switchTab('directory');
+  switchTab(acct ? 'profile' : 'directory');
 }
 
-// INIT
-initStateGrid();
-initCheckboxGrid('lob-grid', LOBS, 'tag-lob');
-initCheckboxGrid('spec-grid', SPECS, 'tag-spec');
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── INIT ──
+initStateGrid('state-grid',   selectedStates);
+initStateGrid('p-state-grid', pSelectedStates);
+initCheckboxGrid('lob-grid',   LOBS);
+initCheckboxGrid('spec-grid',  SPECS);
+initCheckboxGrid('p-lob-grid', LOBS);
+initCheckboxGrid('p-spec-grid',SPECS);
 populateFilters();
 renderGrid();
+updateAuthUI();
 </script>
 </body>
 </html>
