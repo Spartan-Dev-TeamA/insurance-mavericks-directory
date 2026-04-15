@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insurance Mavericks — Member Directory</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1db954;
+    --green-dark: #15903f;
+    --green-glow: rgba(29,185,84,0.18);
+    --black: #0a0a0a;
+    --surface: #111111;
+    --surface2: #181818;
+    --surface3: #222222;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f0f0;
+    --muted: #888;
+    --accent: #f5c542;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0d2b18 0%, #0a1a0f 60%, #0a0a0a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: 64px;
+  }
+
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 38px;
+    height: 38px;
+    background: var(--green);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: #000;
+    letter-spacing: 0;
+    box-shadow: 0 0 16px var(--green-glow);
+  }
+
+  .logo-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stat-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .stat-pill span {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 20px 32px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 10px 20px;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    border-bottom: none;
+    transition: all 0.2s;
+    color: var(--muted);
+    background: transparent;
+  }
+
+  .tab.active {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--green);
+  }
+
+  .tab:hover:not(.active) {
+    color: var(--text);
+  }
+
+  /* ── MAIN ── */
+  .main {
+    padding: 28px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── FILTERS ── */
+  .filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    align-items: center;
+  }
+
+  .search-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    width: 240px;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus {
+    border-color: var(--green);
+  }
+
+  .search-input::placeholder { color: var(--muted); }
+
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.2s;
+  }
+
+  select:focus { border-color: var(--green); }
+
+  .filter-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .filter-count span { color: var(--green); font-weight: 600; }
+
+  /* ── MEMBER GRID ── */
+  .member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .member-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+    animation: fadeUp 0.35s ease both;
+  }
+
+  .member-card:hover {
+    border-color: rgba(29,185,84,0.35);
+    transform: translateY(-2px);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-dark), #0a3d20);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--green);
+    flex-shrink: 0;
+    border: 1px solid rgba(29,185,84,0.3);
+  }
+
+  .card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .card-location {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .card-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-top: 12px;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.3px;
+  }
+
+  .tag-state {
+    background: rgba(29,185,84,0.12);
+    color: var(--green);
+    border: 1px solid rgba(29,185,84,0.25);
+  }
+
+  .tag-lob {
+    background: rgba(245,197,66,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(245,197,66,0.2);
+  }
+
+  .tag-spec {
+    background: rgba(255,255,255,0.05);
+    color: #bbb;
+    border: 1px solid var(--border);
+  }
+
+  .card-footer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .member-since {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .contact-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid rgba(29,185,84,0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    transition: background 0.15s;
+  }
+
+  .contact-btn:hover {
+    background: var(--green-glow);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: #444;
+    margin-bottom: 8px;
+  }
+
+  /* ── FORM PANEL ── */
+  .form-container {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .form-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .form-subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px;
+  }
+
+  .form-section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2.5px;
+    color: var(--green);
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .form-row.single { grid-template-columns: 1fr; }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .form-group input,
+  .form-group textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: var(--green);
+  }
+
+  .form-group input::placeholder,
+  .form-group textarea::placeholder { color: #555; }
+
+  .form-section-gap { margin-top: 28px; }
+
+  /* Checkbox grid */
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+
+  .checkbox-item:hover {
+    border-color: rgba(29,185,84,0.3);
+  }
+
+  .checkbox-item input[type="checkbox"] {
+    accent-color: var(--green);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background: var(--surface2);
+    border: none;
+    padding: 0;
+  }
+
+  .checkbox-item span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #bbb;
+    line-height: 1;
+  }
+
+  .checkbox-item:has(input:checked) {
+    border-color: rgba(29,185,84,0.5);
+    background: rgba(29,185,84,0.08);
+  }
+
+  .checkbox-item:has(input:checked) span {
+    color: var(--green);
+  }
+
+  .state-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .state-grid::-webkit-scrollbar { width: 4px; }
+  .state-grid::-webkit-scrollbar-track { background: var(--surface); }
+  .state-grid::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  .state-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 4px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+  }
+
+  .state-chip input[type="checkbox"] {
+    display: none;
+  }
+
+  .state-chip span {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  .state-chip:hover { border-color: rgba(29,185,84,0.3); }
+
+  .state-chip.selected {
+    border-color: var(--green);
+    background: rgba(29,185,84,0.1);
+  }
+
+  .state-chip.selected span { color: var(--green); }
+
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 28px;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .submit-btn:hover { background: #22d660; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--green);
+    color: #000;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    letter-spacing: 1px;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  @media (max-width: 640px) {
+    .main { padding: 16px; }
+    header { padding: 0 16px; }
+    .tabs { padding: 16px 16px 0; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .filters { gap: 8px; }
+    .search-input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo-icon">IM</div>
+    <div>
+      <div class="logo-text">Insurance Mavericks</div>
+      <div class="logo-sub">Elevate &amp; Revolutionize</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="stat-pill">Members: <span id="header-count">0</span></div>
+    <div class="stat-pill">States: <span id="header-states">0</span></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('directory')">Directory</div>
+  <div class="tab" onclick="switchTab('onboarding')">Join / Onboard</div>
+</div>
+
+<div class="main">
+
+  <!-- DIRECTORY PANEL -->
+  <div class="panel active" id="panel-directory">
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total Members</div>
+        <div class="stat-value" id="stat-members">0</div>
+        <div class="stat-sub">Active professionals</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">States Covered</div>
+        <div class="stat-value" id="stat-states">0</div>
+        <div class="stat-sub">Licensed footprint</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Lines of Business</div>
+        <div class="stat-value" id="stat-lobs">0</div>
+        <div class="stat-sub">Unique LOBs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Specializations</div>
+        <div class="stat-value" id="stat-specs">0</div>
+        <div class="stat-sub">Niche expertise</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input class="search-input" type="text" placeholder="Search by name..." id="search-input" oninput="renderGrid()">
+      <select id="filter-state" onchange="renderGrid()">
+        <option value="">All States</option>
+      </select>
+      <select id="filter-lob" onchange="renderGrid()">
+        <option value="">All Lines of Business</option>
+      </select>
+      <div class="filter-count">Showing <span id="visible-count">0</span> members</div>
+    </div>
+
+    <div class="member-grid" id="member-grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <h3>No Members Found</h3>
+      <p>Try adjusting your filters or be the first to join the directory.</p>
+    </div>
+
+  </div>
+
+  <!-- ONBOARDING PANEL -->
+  <div class="panel" id="panel-onboarding">
+    <div class="form-container">
+      <div class="form-title">Join the Directory</div>
+      <div class="form-subtitle">Get found by fellow Mavericks. Submit your info so members can find referral partners, co-brokering opportunities, and licensed help across state lines.</div>
+
+      <div class="form-card">
+
+        <div class="form-section-title">01 — Personal Info</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name *</label>
+            <input type="text" id="f-first" placeholder="John">
+          </div>
+          <div class="form-group">
+            <label>Last Name *</label>
+            <input type="text" id="f-last" placeholder="Smith">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Agency / Company Name</label>
+            <input type="text" id="f-agency" placeholder="Smith Insurance Group">
+          </div>
+          <div class="form-group">
+            <label>Home State *</label>
+            <input type="text" id="f-homestate" placeholder="TX">
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label>Facebook Profile URL</label>
+            <input type="text" id="f-fb" placeholder="https://facebook.com/yourname">
+          </div>
+        </div>
+
+        <div class="form-section-gap">
+          <div class="form-section-title">02 — Licensed States</div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="margin-bottom:10px;">Select all states where you hold an active license</label>
+            <div class="state-grid" id="state-grid"></div>
+          </div>
+        </div>
+
+        <div class="form-section-gap">
+          <div class="form-section-title">03 — Lines of Business</div>
+          <div class="checkbox-grid" id="lob-grid"></div>
+        </div>
+
+        <div class="form-section-gap">
+          <div class="form-section-title">04 — Specializations</div>
+          <div class="checkbox-grid" id="spec-grid"></div>
+        </div>
+
+        <div class="form-section-gap">
+          <div class="form-section-title">05 — About You</div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Brief bio / what you bring to the group</label>
+              <textarea id="f-bio" rows="3" placeholder="I specialize in high-risk commercial accounts across the Southwest..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="submitForm()">SUBMIT TO DIRECTORY</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Profile added to directory!</div>
+
+<script>
+const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
+const LOBS = ["Commercial P&C","Workers Comp","General Liability","Commercial Auto","BOP","Cyber","E&O / D&O","Surety & Bonds","Personal Auto","Homeowners","Renters","Umbrella","Life Insurance","Disability","Group Benefits","Health","Medicare","Annuities"];
+const SPECS = ["Contractors","Restaurants","Trucking","Healthcare","Real Estate","Construction","Retail","Hospitality","Technology","Nonprofits","Agriculture","Manufacturing","Professional Services","High Value Homes","High Net Worth","Small Business","Veteran-Owned Biz","Franchise"];
+
+// Seed data
+let members = [
+  { id:1, first:"Marcus", last:"Webb", agency:"Webb Risk Management", home:"TX", states:["TX","OK","LA","AR"], lobs:["Commercial P&C","General Liability","BOP"], specs:["Contractors","Small Business"], bio:"Commercial specialist focused on the Gulf Coast region.", joined:"Jan 2024", fb:"" },
+  { id:2, first:"Diana", last:"Torres", agency:"Torres Insurance", home:"FL", states:["FL","GA","SC","NC"], lobs:["Personal Auto","Homeowners","Umbrella","Life Insurance"], specs:["High Value Homes","High Net Worth"], bio:"Personal lines expert serving the Southeast.", joined:"Feb 2024", fb:"" },
+  { id:3, first:"Kevin", last:"Park", agency:"Park Commercial Group", home:"CA", states:["CA","NV","AZ","OR","WA"], lobs:["Cyber","E&O / D&O","Commercial P&C","Workers Comp"], specs:["Technology","Real Estate","Professional Services"], bio:"Cyber and tech E&O specialist on the West Coast.", joined:"Mar 2024", fb:"" },
+  { id:4, first:"Shawna", last:"Briggs", agency:"Briggs Benefits", home:"OH", states:["OH","MI","IN","KY"], lobs:["Group Benefits","Health","Disability","Life Insurance"], specs:["Small Business","Manufacturing","Healthcare"], bio:"Group benefits consultant helping employers build competitive packages.", joined:"Apr 2024", fb:"" },
+  { id:5, first:"Raul", last:"Vasquez", agency:"Southwest Risk Partners", home:"AZ", states:["AZ","TX","NM","CO"], lobs:["Commercial Auto","Trucking","Workers Comp","General Liability"], specs:["Trucking","Contractors","Construction"], bio:"Transportation and heavy equipment coverage across the Southwest.", joined:"May 2024", fb:"" },
+  { id:6, first:"JoAnn", last:"Schaub", agency:"Schaub Insurance Services", home:"PA", states:["PA","NJ","NY","DE","MD"], lobs:["Personal Auto","Homeowners","Life Insurance","Medicare"], specs:["Nonprofits","High Net Worth","Small Business"], bio:"Serving families and business owners in the Mid-Atlantic.", joined:"Jun 2024", fb:"" },
+];
+
+let selectedStates = [];
+
+function initStateGrid() {
+  const grid = document.getElementById('state-grid');
+  STATES.forEach(s => {
+    const chip = document.createElement('label');
+    chip.className = 'state-chip';
+    chip.innerHTML = `<input type="checkbox" value="${s}"><span>${s}</span>`;
+    chip.addEventListener('click', () => {
+      const cb = chip.querySelector('input');
+      setTimeout(() => {
+        if(cb.checked) { chip.classList.add('selected'); if(!selectedStates.includes(s)) selectedStates.push(s); }
+        else { chip.classList.remove('selected'); selectedStates = selectedStates.filter(x=>x!==s); }
+      },0);
+    });
+    grid.appendChild(chip);
+  });
+}
+
+function initCheckboxGrid(id, items, cls) {
+  const grid = document.getElementById(id);
+  items.forEach(item => {
+    const label = document.createElement('label');
+    label.className = 'checkbox-item';
+    label.innerHTML = `<input type="checkbox" value="${item}"><span>${item}</span>`;
+    grid.appendChild(label);
+  });
+}
+
+function getChecked(id) {
+  return Array.from(document.querySelectorAll(`#${id} input:checked`)).map(c=>c.value);
+}
+
+function populateFilters() {
+  const stateSet = new Set(members.flatMap(m=>m.states));
+  const lobSet = new Set(members.flatMap(m=>m.lobs));
+  const sf = document.getElementById('filter-state');
+  const lf = document.getElementById('filter-lob');
+  sf.innerHTML = '<option value="">All States</option>';
+  lobSet.forEach(l => { const o=document.createElement('option'); o.value=l; o.textContent=l; lf.appendChild(o); });
+  [...stateSet].sort().forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; sf.appendChild(o); });
+  updateStats();
+}
+
+function updateStats() {
+  const states = new Set(members.flatMap(m=>m.states));
+  const lobs = new Set(members.flatMap(m=>m.lobs));
+  const specs = new Set(members.flatMap(m=>m.specs));
+  document.getElementById('stat-members').textContent = members.length;
+  document.getElementById('stat-states').textContent = states.size;
+  document.getElementById('stat-lobs').textContent = lobs.size;
+  document.getElementById('stat-specs').textContent = specs.size;
+  document.getElementById('header-count').textContent = members.length;
+  document.getElementById('header-states').textContent = states.size;
+}
+
+function initials(m) { return (m.first[0]+(m.last[0]||'')).toUpperCase(); }
+
+function renderGrid() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const sf = document.getElementById('filter-state').value;
+  const lf = document.getElementById('filter-lob').value;
+  const grid = document.getElementById('member-grid');
+  const empty = document.getElementById('empty-state');
+
+  let filtered = members.filter(m => {
+    const name = (m.first+' '+m.last+' '+(m.agency||'')).toLowerCase();
+    const matchQ = !q || name.includes(q);
+    const matchS = !sf || m.states.includes(sf);
+    const matchL = !lf || m.lobs.includes(lf);
+    return matchQ && matchS && matchL;
+  });
+
+  document.getElementById('visible-count').textContent = filtered.length;
+  grid.innerHTML='';
+
+  if(!filtered.length) { empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  filtered.forEach((m,i) => {
+    const card = document.createElement('div');
+    card.className = 'member-card';
+    card.style.animationDelay = (i*0.04)+'s';
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="avatar">${initials(m)}</div>
+        <div>
+          <div class="card-name">${m.first} ${m.last}</div>
+          <div class="card-location">${m.agency ? m.agency+' &bull; ' : ''}${m.home}</div>
+        </div>
+      </div>
+      <div class="card-section-label">Licensed States</div>
+      <div class="tag-row">${m.states.map(s=>`<span class="tag tag-state">${s}</span>`).join('')}</div>
+      <div class="card-section-label">Lines of Business</div>
+      <div class="tag-row">${m.lobs.map(l=>`<span class="tag tag-lob">${l}</span>`).join('')}</div>
+      ${m.specs.length ? `<div class="card-section-label">Specializations</div><div class="tag-row">${m.specs.map(s=>`<span class="tag tag-spec">${s}</span>`).join('')}</div>` : ''}
+      <div class="card-footer">
+        <span class="member-since">Joined ${m.joined}</span>
+        ${m.fb ? `<button class="contact-btn" onclick="window.open('${m.fb}','_blank')">VIEW PROFILE</button>` : '<button class="contact-btn">CONNECT</button>'}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['directory','onboarding'];
+    t.classList.toggle('active', names[i]===tab);
+  });
+  document.getElementById('panel-directory').classList.toggle('active', tab==='directory');
+  document.getElementById('panel-onboarding').classList.toggle('active', tab==='onboarding');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+function submitForm() {
+  const first = document.getElementById('f-first').value.trim();
+  const last = document.getElementById('f-last').value.trim();
+  const home = document.getElementById('f-homestate').value.trim().toUpperCase();
+  if(!first || !last || !home) { showToast('Please fill in name and home state.'); return; }
+  if(!selectedStates.length) { showToast('Select at least one licensed state.'); return; }
+
+  const lobs = getChecked('lob-grid');
+  const specs = getChecked('spec-grid');
+  if(!lobs.length) { showToast('Select at least one line of business.'); return; }
+
+  const now = new Date();
+  const joined = now.toLocaleString('default',{month:'short'})+' '+now.getFullYear();
+  members.unshift({
+    id: Date.now(),
+    first, last,
+    agency: document.getElementById('f-agency').value.trim(),
+    home,
+    states: [...selectedStates],
+    lobs,
+    specs,
+    bio: document.getElementById('f-bio').value.trim(),
+    joined,
+    fb: document.getElementById('f-fb').value.trim()
+  });
+
+  // Reset
+  document.querySelectorAll('#panel-onboarding input[type=text], #panel-onboarding textarea').forEach(el=>el.value='');
+  document.querySelectorAll('#panel-onboarding input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('.state-chip').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.checkbox-item').forEach(c=>{ const cb=c.querySelector('input'); if(cb) cb.checked=false; });
+  selectedStates = [];
+
+  populateFilters();
+  renderGrid();
+  showToast('You have been added to the directory!');
+  switchTab('directory');
+}
+
+// INIT
+initStateGrid();
+initCheckboxGrid('lob-grid', LOBS, 'tag-lob');
+initCheckboxGrid('spec-grid', SPECS, 'tag-spec');
+populateFilters();
+renderGrid();
+</script>
+</body>
+</html>
