@@ -25,9 +25,22 @@ doc walks through standing up a project from scratch.
      `upsert_my_profile`, `set_my_photo`, `delete_my_profile`.
    - An `avatars` Storage bucket (public read, owner-only write) for
      profile photos.
+3. Paste the contents of `supabase/migrations/0002_tiers_and_messaging.sql`
+   and run it. This adds:
+   - A `tier` column on `profiles` (`'free'` or `'pro'`) and a
+     `set_my_tier` RPC — a **self-service stub, not real billing**. Wire a
+     Stripe webhook (`checkout.session.completed` → `update profiles set
+     tier = 'pro' where user_id = ...`) before charging real money.
+   - `message_threads` / `messages` tables for direct messaging, with RLS
+     that only lets a thread's two participants read it, and no direct
+     write access — all writes go through `send_message()`, which
+     enforces **"only Pro members are messageable"** server-side (not
+     just in the UI).
+   - RPCs: `send_message`, `list_my_threads`, `mark_thread_read`.
 
 If you'd rather use the CLI: `supabase link` then
-`supabase db push` from the project root.
+`supabase db push` from the project root (applies both migrations in
+order).
 
 ## 3. Get your API keys
 
@@ -76,19 +89,39 @@ build step are required.
 
 | File | Purpose |
 |---|---|
-| `supabase/migrations/0001_init.sql` | Full schema: tables, RLS policies, RPC functions, storage bucket. Re-runnable (`create ... if not exists` / `on conflict do nothing` throughout). |
-| `supabase-client.js` | Thin data-access layer (`window.db`) wrapping Supabase auth, profile CRUD, photo upload, and directory stats. `index.html` calls into this instead of talking to `supabase-js` directly. |
-| `index.html` | UI + wiring. Auth (email/password + Google), onboarding form, profile editing, and the directory grid all go through `window.db`. |
+| `supabase/migrations/0001_init.sql` | Core schema: `profiles`, taxonomy tables, RLS, storage bucket. Re-runnable (`create ... if not exists` / `on conflict do nothing` throughout). |
+| `supabase/migrations/0002_tiers_and_messaging.sql` | Membership `tier` column + Pro-only messaging (`message_threads`, `messages`, RLS, RPCs). Re-runnable. |
+| `supabase-client.js` | Thin data-access layer (`window.db`) wrapping Supabase auth, profile CRUD, photo upload, directory stats, and messaging. `index.html` calls into this instead of talking to `supabase-js` directly. |
+| `index.html` | UI + wiring. Auth (email/password + Google), onboarding form, profile editing, the directory grid, membership upgrade, and the Messages tab all go through `window.db`. |
+
+## Feature audit — signup → profile → directory → messaging
+
+- **Sign up**: email/password (`doSignup`) or Google (`handleGoogleSignIn`)
+  create a real Supabase Auth user. Email sign-up respects whatever
+  email-confirmation setting you have in Authentication → Providers.
+- **Build a profile**: the "Join / Onboard" tab calls `upsert_my_profile`.
+  Required fields (name, a valid home state, at least one licensed state
+  and line of business) are validated client-side against `STATES` before
+  the call, and enforced again by table constraints server-side.
+- **See other members**: the directory grid reads `profiles` through RLS
+  that requires the caller to be `authenticated` — any signed-in member,
+  regardless of tier, can browse the full directory.
+- **Pro messaging**: the Messages tab (`renderMessagesTab` /
+  `openThread` / `sendThreadMessage` in `index.html`) lists threads via
+  `list_my_threads` and sends via `send_message`. A member card only
+  shows a **MESSAGE** button when that member's `tier = 'pro'`; the same
+  rule is enforced again inside `send_message()` itself, so it can't be
+  bypassed by calling the API directly. Upgrading is a self-service
+  button in **My Profile → Membership** (`set_my_tier` — again, not real
+  billing yet).
 
 ## Extending the schema
 
-`get_directory_stats`, `search_directory`, `upsert_my_profile`,
-`set_my_photo`, and `delete_my_profile` are the current RPC surface. Add
-new capabilities (e.g. messaging between members, referral tracking,
-paid tiers) as additional tables + RPC functions in a new
-`supabase/migrations/000N_*.sql` file, and extend `supabase-client.js`
-with matching wrapper methods — keep `index.html` talking to `window.db`
-only, never to `supabase-js` directly, so the data layer stays swappable.
+Add new capabilities (referral tracking, real billing, etc.) as
+additional tables + RPC functions in a new `supabase/migrations/000N_*.sql`
+file, and extend `supabase-client.js` with matching wrapper methods —
+keep `index.html` talking to `window.db` only, never to `supabase-js`
+directly, so the data layer stays swappable.
 
 ## Full account deletion
 

@@ -1,6 +1,7 @@
 /* ============================================================
    Insurance Mavericks — Supabase Client & Data Access Layer
-   Talks to the schema in supabase/migrations/0001_init.sql.
+   Talks to the schema in supabase/migrations/0001_init.sql and
+   0002_tiers_and_messaging.sql.
    See SUPABASE_SETUP.md for how to create the project and wire
    these values up.
    ============================================================ */
@@ -35,7 +36,21 @@ function mapProfileRow(row) {
     bio: row.bio || '',
     fb: row.facebook_url || '',
     photo: row.photo_url || null,
+    tier: row.tier || 'free',
     joined: new Date(row.joined_at).toLocaleString('default', { month: 'short', year: 'numeric' })
+  };
+}
+
+function mapThreadRow(row) {
+  return {
+    threadId: row.thread_id,
+    otherUserId: row.other_user_id,
+    otherFirst: row.other_first,
+    otherLast: row.other_last,
+    otherPhoto: row.other_photo,
+    lastBody: row.last_body,
+    lastAt: row.last_at,
+    unread: row.unread_count || 0
   };
 }
 
@@ -150,6 +165,16 @@ window.db = {
       const { data, error } = await sb.rpc('set_my_photo', { p_photo_url: pub.publicUrl });
       if (error) throw error;
       return mapProfileRow(data);
+    },
+
+    // Self-service tier toggle — NOT wired to real billing. Replace with
+    // a Stripe webhook (checkout.session.completed → update tier) before
+    // launch; see SUPABASE_SETUP.md.
+    async setTier(tier) {
+      requireConfigured();
+      const { data, error } = await sb.rpc('set_my_tier', { p_tier: tier });
+      if (error) throw error;
+      return mapProfileRow(data);
     }
   },
 
@@ -160,6 +185,37 @@ window.db = {
       const { data, error } = await sb.rpc('get_directory_stats');
       if (error) throw error;
       return data[0];
+    }
+  },
+
+  messaging: {
+    // Pro-only messaging. The Pro-tier requirement is enforced server-side
+    // in send_message() — this is UX, not the security boundary.
+    async listThreads() {
+      if (!DB_READY) return [];
+      const { data, error } = await sb.rpc('list_my_threads');
+      if (error) throw error;
+      return data.map(mapThreadRow);
+    },
+
+    async listMessages(threadId) {
+      if (!DB_READY) return [];
+      const { data, error } = await sb.from('messages').select('*').eq('thread_id', threadId).order('created_at', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+
+    async send(toUserId, body) {
+      requireConfigured();
+      const { data, error } = await sb.rpc('send_message', { p_to_user: toUserId, p_body: body });
+      if (error) throw error;
+      return data;
+    },
+
+    async markRead(threadId) {
+      if (!DB_READY) return;
+      const { error } = await sb.rpc('mark_thread_read', { p_thread_id: threadId });
+      if (error) throw error;
     }
   }
 };

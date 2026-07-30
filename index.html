@@ -583,6 +583,73 @@
   .no-profile-prompt p  { color: var(--muted); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
   .no-profile-prompt .submit-btn { max-width: 280px; margin: 0 auto; }
 
+  /* ── TIER BADGE ── */
+  .tier-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+  }
+  .tier-badge.pro  { background: rgba(245,197,66,0.15); color: var(--accent); border: 1px solid rgba(245,197,66,0.3); }
+  .tier-badge.free { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); }
+
+  .contact-btn.locked { color: var(--muted); border-color: var(--border); cursor: default; }
+  .contact-btn.locked:hover { background: transparent; }
+
+  /* ── MY PROFILE — MEMBERSHIP ── */
+  .membership-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; gap: 12px;
+  }
+  .membership-row .lab { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .membership-row .val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
+
+  /* ── MESSAGES PANEL ── */
+  .messages-layout {
+    display: grid; grid-template-columns: 280px 1fr; gap: 16px;
+    height: calc(100vh - 230px); min-height: 420px;
+  }
+  .msg-thread-list, .msg-thread-pane {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow-y: auto;
+  }
+  .msg-thread-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .msg-thread-row:hover, .msg-thread-row.active { background: var(--surface2); }
+  .msg-thread-row .info { flex: 1; min-width: 0; }
+  .msg-thread-row .nm { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .msg-thread-row .preview { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg-unread-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; }
+  .msg-empty-hint { padding: 30px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  .msg-thread-pane { display: flex; flex-direction: column; }
+  .msg-thread-head { padding: 14px 18px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 14px; }
+  .msg-thread-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+  .msg-bubble { max-width: 70%; padding: 9px 13px; border-radius: 12px; font-size: 13px; line-height: 1.4; word-wrap: break-word; }
+  .msg-bubble.me   { align-self: flex-end; background: var(--green); color: #000; border-bottom-right-radius: 3px; }
+  .msg-bubble.them { align-self: flex-start; background: var(--surface2); color: var(--text); border-bottom-left-radius: 3px; }
+  .msg-composer { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+  .msg-composer textarea {
+    flex: 1; resize: none; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; outline: none; max-height: 80px;
+  }
+  .msg-composer textarea:focus { border-color: var(--green); }
+  .msg-composer .send-btn {
+    background: var(--green); color: #000; border: none; border-radius: 8px;
+    padding: 0 18px; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; cursor: pointer;
+  }
+  .msg-composer .send-btn:hover { background: #22d660; }
+
+  @media (max-width: 640px) {
+    .messages-layout { grid-template-columns: 1fr; height: auto; }
+    .msg-thread-list { max-height: 200px; }
+  }
+
   @media (max-width: 640px) {
     .main      { padding: 16px; }
     header     { padding: 0 16px; }
@@ -681,6 +748,7 @@
   <div class="tab active"  data-tab="directory"  onclick="switchTab('directory')">Directory</div>
   <div class="tab"         data-tab="onboarding" id="tab-onboarding" onclick="switchTab('onboarding')">Join / Onboard</div>
   <div class="tab"         data-tab="profile"    onclick="switchTab('profile')">My Profile</div>
+  <div class="tab"         data-tab="messages"   onclick="switchTab('messages')">Messages</div>
 </div>
 
 <div class="main">
@@ -841,6 +909,13 @@
           </div>
           <button class="danger-btn" onclick="confirmDeleteAccount()">Delete Profile</button>
         </div>
+        <div class="membership-row">
+          <div>
+            <div class="lab">Membership</div>
+            <div class="val" id="membership-tier-label">Free</div>
+          </div>
+          <button class="submit-btn" id="membership-upgrade-btn" style="margin-top:0;width:auto;padding:10px 20px;font-size:13px;" onclick="upgradeToPro()">UPGRADE TO PRO</button>
+        </div>
         <div class="form-card">
           <div class="form-section-title">Profile Photo</div>
           <div class="photo-upload-area">
@@ -892,6 +967,14 @@
     </div>
   </div>
 
+  <!-- MESSAGES PANEL (Pro members are messageable; anyone signed in can send/receive) -->
+  <div class="panel" id="panel-messages">
+    <div class="messages-layout">
+      <div class="msg-thread-list" id="msg-thread-list"></div>
+      <div class="msg-thread-pane" id="msg-thread-pane"></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -929,6 +1012,12 @@ let pSelectedStates  = [];
 
 function notConfiguredToast() {
   showToast('Backend not configured yet — see SUPABASE_SETUP.md.');
+}
+
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
 }
 
 async function refreshMembers() {
@@ -1149,6 +1238,11 @@ function loadProfilePanel() {
   document.getElementById('p-fb').value        = m.fb      || '';
   document.getElementById('p-bio').value       = m.bio     || '';
 
+  const isPro = m.tier === 'pro';
+  document.getElementById('membership-tier-label').textContent = isPro ? 'Pro' : 'Free';
+  const upgradeBtn = document.getElementById('membership-upgrade-btn');
+  upgradeBtn.style.display = isPro ? 'none' : '';
+
   const circle  = document.getElementById('profile-photo-circle');
   const photo   = m.photo;
   const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
@@ -1254,6 +1348,119 @@ async function confirmDeleteAccount() {
   }
 }
 
+// ── MEMBERSHIP (demo-only tier toggle — no real billing wired up yet) ──
+async function upgradeToPro() {
+  if (!db.ready) { notConfiguredToast(); return; }
+  if (!currentProfile) { showToast('Set up your profile before upgrading.'); return; }
+  try {
+    currentProfile = await db.profiles.setTier('pro');
+    await refreshMembers();
+    loadProfilePanel();
+    renderGrid();
+    showToast('Upgraded to Pro — you can now be messaged by other members!');
+  } catch (e) {
+    showToast(e.message || 'Could not upgrade your membership.');
+  }
+}
+
+// ── MESSAGING (Pro members only — enforced server-side in send_message) ──
+let threadsCache = [];
+let activeThreadOtherUserId = null;
+
+function openMessageWith(userId) {
+  if (!getCurrentAccount()) { openAuthModal('login'); return; }
+  activeThreadOtherUserId = userId;
+  switchTab('messages');
+}
+
+async function renderMessagesTab() {
+  if (!db.ready) {
+    document.getElementById('msg-thread-list').innerHTML = `<div class="msg-empty-hint">Backend not configured yet — see SUPABASE_SETUP.md.</div>`;
+    document.getElementById('msg-thread-pane').innerHTML = '';
+    return;
+  }
+  try {
+    threadsCache = await db.messaging.listThreads();
+  } catch (e) {
+    showToast(e.message || 'Could not load conversations.');
+    return;
+  }
+
+  const list = document.getElementById('msg-thread-list');
+  list.innerHTML = threadsCache.length
+    ? threadsCache.map(t => `
+      <div class="msg-thread-row ${t.otherUserId === activeThreadOtherUserId ? 'active' : ''}" data-uid="${t.otherUserId}">
+        <div class="avatar avatar-md">${t.otherPhoto ? `<img src="${t.otherPhoto}" alt="">` : escapeHtml((t.otherFirst[0] + (t.otherLast[0] || '')).toUpperCase())}</div>
+        <div class="info">
+          <div class="nm">${escapeHtml(t.otherFirst)} ${escapeHtml(t.otherLast)} ${t.unread ? '<span class="msg-unread-dot"></span>' : ''}</div>
+          <div class="preview">${escapeHtml(t.lastBody || '')}</div>
+        </div>
+      </div>`).join('')
+    : `<div class="msg-empty-hint">No conversations yet.<br>Click MESSAGE on a Pro member's card to start one.</div>`;
+
+  list.querySelectorAll('.msg-thread-row').forEach(row => {
+    row.onclick = () => openThread(row.dataset.uid);
+  });
+
+  if (activeThreadOtherUserId) await renderThreadPane(activeThreadOtherUserId);
+  else document.getElementById('msg-thread-pane').innerHTML = `<div class="msg-empty-hint">Select a conversation, or click MESSAGE on a Pro member's card.</div>`;
+}
+
+async function openThread(otherUserId) {
+  activeThreadOtherUserId = otherUserId;
+  await renderThreadPane(otherUserId);
+  const thread = threadsCache.find(t => t.otherUserId === otherUserId);
+  if (thread && thread.unread) {
+    try { await db.messaging.markRead(thread.threadId); } catch (e) { console.error(e); }
+  }
+  await renderMessagesTab();
+}
+
+async function renderThreadPane(otherUserId) {
+  const thread = threadsCache.find(t => t.otherUserId === otherUserId);
+  const other  = members.find(m => m.userId === otherUserId);
+  const pane   = document.getElementById('msg-thread-pane');
+  const meId   = getCurrentAccount()?.id;
+
+  let msgs = [];
+  if (thread) {
+    try { msgs = await db.messaging.listMessages(thread.threadId); }
+    catch (e) { showToast(e.message || 'Could not load messages.'); }
+  }
+
+  const name = other ? `${other.first} ${other.last}` : (thread ? `${thread.otherFirst} ${thread.otherLast}` : 'Member');
+  pane.innerHTML = `
+    <div class="msg-thread-head">${escapeHtml(name)}</div>
+    <div class="msg-thread-body" id="msg-thread-body">
+      ${msgs.map(m => `<div class="msg-bubble ${m.sender_id === meId ? 'me' : 'them'}">${escapeHtml(m.body)}</div>`).join('')}
+    </div>
+    <div class="msg-composer">
+      <textarea id="msg-reply-text" placeholder="Type a message..." rows="1"></textarea>
+      <button class="send-btn" onclick="sendThreadMessage('${otherUserId}')">SEND</button>
+    </div>
+  `;
+  const body = document.getElementById('msg-thread-body');
+  body.scrollTop = body.scrollHeight;
+
+  const ta = document.getElementById('msg-reply-text');
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendThreadMessage(otherUserId); }
+  });
+}
+
+async function sendThreadMessage(otherUserId) {
+  const ta = document.getElementById('msg-reply-text');
+  const text = ta.value.trim();
+  if (!text) return;
+  try {
+    await db.messaging.send(otherUserId, text);
+    ta.value = '';
+    await renderMessagesTab();
+  } catch (e) {
+    showToast(e.message || 'Could not send message.');
+  }
+}
+
 // ── GRIDS ──
 function initStateGrid(gridId, stateArr) {
   const grid = document.getElementById(gridId);
@@ -1331,18 +1538,34 @@ function renderGrid() {
   if(!filtered.length) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
+  const meId = getCurrentAccount()?.id;
+
   filtered.forEach((m, i) => {
     const card    = document.createElement('div');
     card.className = 'member-card';
     card.style.animationDelay = (i * 0.04) + 's';
     const photo   = m.photo;
     const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
+    const isPro   = m.tier === 'pro';
+    const isSelf  = m.userId === meId;
+
+    let actionBtn;
+    if (isSelf) {
+      actionBtn = `<button class="contact-btn" onclick="switchTab('profile')">EDIT PROFILE</button>`;
+    } else if (isPro) {
+      actionBtn = `<button class="contact-btn" onclick="openMessageWith('${m.userId}')">MESSAGE</button>`;
+    } else if (m.fb) {
+      actionBtn = `<button class="contact-btn" onclick="window.open('${m.fb}','_blank')">VIEW PROFILE</button>`;
+    } else {
+      actionBtn = `<button class="contact-btn locked" title="Free members are not messageable — Pro only">FREE MEMBER</button>`;
+    }
+
     card.innerHTML = `
       <div class="card-header">
         <div class="avatar">${photo ? `<img src="${photo}" alt="${initStr}">` : initStr}</div>
         <div>
-          <div class="card-name">${m.first} ${m.last}</div>
-          <div class="card-location">${m.agency ? m.agency + ' &bull; ' : ''}${m.home}</div>
+          <div class="card-name">${escapeHtml(m.first)} ${escapeHtml(m.last)} <span class="tier-badge ${isPro ? 'pro' : 'free'}">${isPro ? 'PRO' : 'FREE'}</span></div>
+          <div class="card-location">${m.agency ? escapeHtml(m.agency) + ' &bull; ' : ''}${m.home}</div>
         </div>
       </div>
       <div class="card-section-label">Licensed States</div>
@@ -1352,7 +1575,7 @@ function renderGrid() {
       ${m.specs.length ? `<div class="card-section-label">Specializations</div><div class="tag-row">${m.specs.map(s => `<span class="tag tag-spec">${s}</span>`).join('')}</div>` : ''}
       <div class="card-footer">
         <span class="member-since">Joined ${m.joined}</span>
-        ${m.fb ? `<button class="contact-btn" onclick="window.open('${m.fb}','_blank')">VIEW PROFILE</button>` : '<button class="contact-btn">CONNECT</button>'}
+        ${actionBtn}
       </div>`;
     grid.appendChild(card);
   });
@@ -1364,11 +1587,12 @@ function switchTab(tab) {
   if(!acct) { openAuthModal('login'); return; }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  ['welcome','directory','onboarding','profile'].forEach(name => {
+  ['welcome','directory','onboarding','profile','messages'].forEach(name => {
     const panel = document.getElementById('panel-' + name);
     if(panel) panel.classList.toggle('active', name === tab);
   });
-  if(tab === 'profile') loadProfilePanel();
+  if(tab === 'profile')  loadProfilePanel();
+  if(tab === 'messages') renderMessagesTab();
 }
 
 // ── ONBOARDING SUBMIT ──
