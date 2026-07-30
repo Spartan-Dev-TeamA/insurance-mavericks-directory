@@ -1,0 +1,10 @@
+{
+  "name": "insurance-mavericks-directory",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static site + Netlify Functions for Stripe checkout and webhook handling.",
+  "dependencies": {
+    "stripe": "^17.4.0",
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

@@ -6,9 +6,14 @@
 -- ────────────────────────────────────────────────────────────
 -- Membership tier
 -- 'free' members are listed in the directory but cannot be messaged.
--- 'pro' members are messageable. There is no real billing wired up
--- yet — set_my_tier() is a self-service stub. Replace with a Stripe
--- webhook (checkout.session.completed → update tier) before launch.
+-- 'basic' members are fully listed (contact info, etc.) but still not
+-- messageable. 'pro' members are messageable. Paid tiers ('basic',
+-- 'pro') are only ever granted by the Stripe webhook
+-- (netlify/functions/stripe-webhook.js), which runs with the Supabase
+-- service role and bypasses RLS/this RPC entirely — set_my_tier() below
+-- deliberately only allows self-downgrading to 'free' (e.g. cancelling),
+-- so nobody can grant themselves a paid tier for free by calling the
+-- RPC directly. See ../../STRIPE_SETUP.md.
 -- ────────────────────────────────────────────────────────────
 alter table public.profiles
   add column if not exists tier text not null default 'free';
@@ -16,7 +21,7 @@ alter table public.profiles
 alter table public.profiles
   drop constraint if exists profiles_tier_check;
 alter table public.profiles
-  add constraint profiles_tier_check check (tier in ('free', 'pro'));
+  add constraint profiles_tier_check check (tier in ('free', 'basic', 'pro'));
 
 create or replace function public.set_my_tier(p_tier text)
 returns public.profiles
@@ -30,8 +35,8 @@ begin
   if auth.uid() is null then
     raise exception 'Not signed in';
   end if;
-  if p_tier not in ('free', 'pro') then
-    raise exception 'Invalid tier: %', p_tier;
+  if p_tier <> 'free' then
+    raise exception 'Paid tiers can only be granted after a successful Stripe checkout, not set directly.';
   end if;
 
   update profiles set tier = p_tier

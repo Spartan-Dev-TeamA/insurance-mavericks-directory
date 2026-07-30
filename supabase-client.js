@@ -167,9 +167,9 @@ window.db = {
       return mapProfileRow(data);
     },
 
-    // Self-service tier toggle — NOT wired to real billing. Replace with
-    // a Stripe webhook (checkout.session.completed → update tier) before
-    // launch; see SUPABASE_SETUP.md.
+    // Self-service downgrade only ('free') — the database RPC rejects
+    // any other value. Paid tiers ('basic'/'pro') are granted by the
+    // Stripe webhook after a real checkout; see STRIPE_SETUP.md.
     async setTier(tier) {
       requireConfigured();
       const { data, error } = await sb.rpc('set_my_tier', { p_tier: tier });

@@ -596,13 +596,38 @@
   .contact-btn.locked:hover { background: transparent; }
 
   /* ── MY PROFILE — MEMBERSHIP ── */
-  .membership-row {
-    display: flex; align-items: center; justify-content: space-between;
+  .membership-card {
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; gap: 12px;
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 24px;
   }
-  .membership-row .lab { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
-  .membership-row .val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
+  .membership-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .membership-head .lab { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .membership-head .val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
+
+  .billing-toggle {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--muted); cursor: pointer; user-select: none;
+  }
+  .billing-toggle input { accent-color: var(--green); width: 14px; height: 14px; }
+
+  .membership-options { display: flex; gap: 10px; flex-wrap: wrap; }
+  .membership-option-btn {
+    background: var(--green); color: #000; border: none;
+    border-radius: 8px; padding: 10px 18px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .membership-option-btn:hover { background: #22d660; }
+  .membership-option-btn.secondary {
+    background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,0.15);
+  }
+  .membership-option-btn.secondary:hover { border-color: var(--green); color: var(--green); }
+  .membership-maxed { font-size: 13px; color: var(--muted); }
+
+  .tier-badge.basic { background: rgba(29,185,84,0.1); color: var(--green); border: 1px solid rgba(29,185,84,0.22); }
 
   /* ── MESSAGES PANEL ── */
   .messages-layout {
@@ -909,12 +934,18 @@
           </div>
           <button class="danger-btn" onclick="confirmDeleteAccount()">Delete Profile</button>
         </div>
-        <div class="membership-row">
-          <div>
-            <div class="lab">Membership</div>
-            <div class="val" id="membership-tier-label">Free</div>
+        <div class="membership-card">
+          <div class="membership-head">
+            <div>
+              <div class="lab">Membership</div>
+              <div class="val" id="membership-tier-label">Free</div>
+            </div>
+            <label class="billing-toggle">
+              <input type="checkbox" id="billing-annual-toggle" onchange="renderMembershipOptions()">
+              <span>Bill annually</span>
+            </label>
           </div>
-          <button class="submit-btn" id="membership-upgrade-btn" style="margin-top:0;width:auto;padding:10px 20px;font-size:13px;" onclick="upgradeToPro()">UPGRADE TO PRO</button>
+          <div class="membership-options" id="membership-options"></div>
         </div>
         <div class="form-card">
           <div class="form-section-title">Profile Photo</div>
@@ -982,6 +1013,8 @@
 <!-- Supabase client library + our data-access wrapper — see SUPABASE_SETUP.md -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="supabase-client.js"></script>
+<!-- Stripe checkout wrapper — see STRIPE_SETUP.md -->
+<script src="stripe-client.js"></script>
 
 <script>
 // ─────────────────────────────────────────────
@@ -1238,10 +1271,9 @@ function loadProfilePanel() {
   document.getElementById('p-fb').value        = m.fb      || '';
   document.getElementById('p-bio').value       = m.bio     || '';
 
-  const isPro = m.tier === 'pro';
-  document.getElementById('membership-tier-label').textContent = isPro ? 'Pro' : 'Free';
-  const upgradeBtn = document.getElementById('membership-upgrade-btn');
-  upgradeBtn.style.display = isPro ? 'none' : '';
+  const tierLabels = { free: 'Free', basic: 'Basic', pro: 'Pro' };
+  document.getElementById('membership-tier-label').textContent = tierLabels[m.tier] || 'Free';
+  renderMembershipOptions();
 
   const circle  = document.getElementById('profile-photo-circle');
   const photo   = m.photo;
@@ -1348,18 +1380,67 @@ async function confirmDeleteAccount() {
   }
 }
 
-// ── MEMBERSHIP (demo-only tier toggle — no real billing wired up yet) ──
-async function upgradeToPro() {
+// ── MEMBERSHIP — real Stripe Checkout (see STRIPE_SETUP.md) ──
+const MEMBERSHIP_PRICES = {
+  basic: { monthly: 14.87, annual: 97.84 },
+  pro:   { monthly: 20.82, annual: 136.98 }
+};
+
+function renderMembershipOptions() {
+  const opts = document.getElementById('membership-options');
+  if (!opts) return;
+  const tier = currentProfile?.tier || 'free';
+  const annual = document.getElementById('billing-annual-toggle').checked;
+  const interval = annual ? 'year' : 'month';
+
+  const available = tier === 'pro' ? [] : tier === 'basic' ? ['pro'] : ['basic', 'pro'];
+
+  if (!available.length) {
+    opts.innerHTML = `<div class="membership-maxed">You're on the top Pro tier — thanks for being a Maverick!</div>`;
+    return;
+  }
+
+  opts.innerHTML = available.map((plan, i) => {
+    const price = annual ? MEMBERSHIP_PRICES[plan].annual : MEMBERSHIP_PRICES[plan].monthly;
+    const priceLabel = annual ? `$${price.toFixed(2)}/yr` : `$${price.toFixed(2)}/mo`;
+    const planLabel = plan === 'pro' ? 'Pro' : 'Basic';
+    return `<button class="membership-option-btn ${i > 0 ? 'secondary' : ''}" onclick="startMembershipCheckout('${plan}','${interval}')">Upgrade to ${planLabel} — ${priceLabel}</button>`;
+  }).join('');
+}
+
+async function startMembershipCheckout(plan, interval) {
   if (!db.ready) { notConfiguredToast(); return; }
   if (!currentProfile) { showToast('Set up your profile before upgrading.'); return; }
+  if (!currentSession) { openAuthModal('login'); return; }
   try {
-    currentProfile = await db.profiles.setTier('pro');
-    await refreshMembers();
-    loadProfilePanel();
-    renderGrid();
-    showToast('Upgraded to Pro — you can now be messaged by other members!');
+    await window.stripeCheckout.startCheckout(plan, interval, currentSession.access_token, getCurrentAccount()?.email);
+    // startCheckout redirects the browser to Stripe on success — nothing more to do here.
   } catch (e) {
-    showToast(e.message || 'Could not upgrade your membership.');
+    showToast(e.message || 'Could not start checkout.');
+  }
+}
+
+// Stripe redirects back to "/?checkout=success" or "/?checkout=cancelled".
+// The webhook usually flips the tier within a second or two of payment,
+// so we refresh shortly after landing back rather than assuming it's
+// already reflected the instant the redirect completes.
+function handleCheckoutRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('checkout');
+  if (!status) return;
+  history.replaceState(null, '', window.location.pathname);
+
+  if (status === 'success') {
+    showToast('Payment received! Activating your new membership...');
+    setTimeout(async () => {
+      await refreshCurrentProfile();
+      await refreshMembers();
+      renderGrid();
+      if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
+      showToast('Membership updated!');
+    }, 3000);
+  } else if (status === 'cancelled') {
+    showToast('Checkout cancelled — no charge was made.');
   }
 }
 
@@ -1547,7 +1628,10 @@ function renderGrid() {
     const photo   = m.photo;
     const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
     const isPro   = m.tier === 'pro';
+    const isBasic = m.tier === 'basic';
     const isSelf  = m.userId === meId;
+    const tierLabel = isPro ? 'PRO' : isBasic ? 'BASIC' : 'FREE';
+    const tierClass = isPro ? 'pro' : isBasic ? 'basic' : 'free';
 
     let actionBtn;
     if (isSelf) {
@@ -1557,14 +1641,14 @@ function renderGrid() {
     } else if (m.fb) {
       actionBtn = `<button class="contact-btn" onclick="window.open('${m.fb}','_blank')">VIEW PROFILE</button>`;
     } else {
-      actionBtn = `<button class="contact-btn locked" title="Free members are not messageable — Pro only">FREE MEMBER</button>`;
+      actionBtn = `<button class="contact-btn locked" title="Only Pro members are messageable">${isBasic ? 'BASIC MEMBER' : 'FREE MEMBER'}</button>`;
     }
 
     card.innerHTML = `
       <div class="card-header">
         <div class="avatar">${photo ? `<img src="${photo}" alt="${initStr}">` : initStr}</div>
         <div>
-          <div class="card-name">${escapeHtml(m.first)} ${escapeHtml(m.last)} <span class="tier-badge ${isPro ? 'pro' : 'free'}">${isPro ? 'PRO' : 'FREE'}</span></div>
+          <div class="card-name">${escapeHtml(m.first)} ${escapeHtml(m.last)} <span class="tier-badge ${tierClass}">${tierLabel}</span></div>
           <div class="card-location">${m.agency ? escapeHtml(m.agency) + ' &bull; ' : ''}${m.home}</div>
         </div>
       </div>
@@ -1671,6 +1755,9 @@ async function init() {
     document.getElementById('panel-directory').classList.add('active');
     document.querySelector('[data-tab="directory"]').classList.add('active');
   }
+
+  // Pick up "?checkout=success|cancelled" after returning from Stripe
+  handleCheckoutRedirect();
 
   // Keep local state in sync with Supabase's own session lifecycle
   // (token refresh, sign-out from another tab, etc.)

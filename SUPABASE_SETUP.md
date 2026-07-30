@@ -111,9 +111,11 @@ build step are required.
   `list_my_threads` and sends via `send_message`. A member card only
   shows a **MESSAGE** button when that member's `tier = 'pro'`; the same
   rule is enforced again inside `send_message()` itself, so it can't be
-  bypassed by calling the API directly. Upgrading is a self-service
-  button in **My Profile → Membership** (`set_my_tier` — again, not real
-  billing yet).
+  bypassed by calling the API directly.
+- **Membership upgrades** (Basic/Pro) go through real Stripe Checkout,
+  not a self-service toggle — see **STRIPE_SETUP.md** for that whole
+  flow. `set_my_tier()` in the database only allows self-downgrading to
+  `'free'`; paid tiers are granted exclusively by the Stripe webhook.
 
 ## Extending the schema
 
