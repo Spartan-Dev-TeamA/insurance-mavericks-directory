@@ -201,6 +201,12 @@
   }
   .tab.active { background: var(--surface); border-color: var(--border); color: var(--green); }
   .tab:hover:not(.active) { color: var(--text); }
+  .tab-unread-badge {
+    display: none; min-width: 18px; height: 18px; margin-left: 6px;
+    padding: 0 5px; border-radius: 9px; align-items: center; justify-content: center;
+    background: var(--green); color: #000; font-size: 10px; font-weight: 800;
+  }
+  .tab-unread-badge.show { display: inline-flex; }
 
   /* ── MAIN ── */
   .main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
@@ -430,6 +436,8 @@
     letter-spacing: 0.5px; transition: background 0.15s;
   }
   .contact-btn:hover { background: var(--green-glow); }
+  a.contact-btn { text-decoration: none; }
+  .card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 
   /* ── EMPTY STATE ── */
   .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
@@ -688,6 +696,28 @@
     .stat-pill { display: none; }
     .welcome-title { font-size: 52px; }
   }
+
+  .email-pref-card {
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:20px 22px; margin-bottom:18px;
+  }
+  .email-pref-title { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .email-pref-copy { color:var(--muted); font-size:12px; line-height:1.5; }
+  .email-switch { position:relative; display:inline-block; width:46px; height:26px; flex-shrink:0; }
+  .email-switch input { opacity:0; width:0; height:0; }
+  .email-switch-track {
+    position:absolute; inset:0; cursor:pointer; border-radius:13px;
+    background:#333; transition:background .2s;
+  }
+  .email-switch-track::before {
+    content:''; position:absolute; width:20px; height:20px; left:3px; top:3px;
+    border-radius:50%; background:#aaa; transition:transform .2s,background .2s;
+  }
+  .email-switch input:checked + .email-switch-track { background:var(--green-dark); }
+  .email-switch input:checked + .email-switch-track::before { transform:translateX(20px); background:#fff; }
+  .email-switch input:disabled + .email-switch-track { cursor:wait; opacity:.5; }
+
 </style>
 </head>
 <body>
@@ -773,7 +803,7 @@
   <div class="tab active"  data-tab="directory"  onclick="switchTab('directory')">Directory</div>
   <div class="tab"         data-tab="onboarding" id="tab-onboarding" onclick="switchTab('onboarding')">Join / Onboard</div>
   <div class="tab"         data-tab="profile"    onclick="switchTab('profile')">My Profile</div>
-  <div class="tab"         data-tab="messages"   onclick="switchTab('messages')">Messages</div>
+  <div class="tab"         data-tab="messages"   onclick="switchTab('messages')">Messages<span class="tab-unread-badge" id="messages-unread-badge">0</span></div>
 </div>
 
 <div class="main">
@@ -947,6 +977,17 @@
           </div>
           <div class="membership-options" id="membership-options"></div>
         </div>
+
+        <div class="email-pref-card">
+          <div>
+            <div class="email-pref-title">Email notifications</div>
+            <div class="email-pref-copy">Email me when a new unread conversation message arrives.</div>
+          </div>
+          <label class="email-switch" aria-label="Email notifications">
+            <input type="checkbox" id="email-notifications-toggle" disabled onchange="toggleEmailNotifications(this)">
+            <span class="email-switch-track"></span>
+          </label>
+        </div>
         <div class="form-card">
           <div class="form-section-title">Profile Photo</div>
           <div class="photo-upload-area">
@@ -1042,15 +1083,27 @@ let currentSession   = null;  // Supabase auth session (or null)
 let currentProfile   = null;  // This user's own profile row (or null until they join)
 let selectedStates   = [];
 let pSelectedStates  = [];
+let emailPrefsRequestToken = 0;
+let welcomeSelfHealAttempted = false;
 
 function notConfiguredToast() {
   showToast('Backend not configured yet — see SUPABASE_SETUP.md.');
 }
 
-function escapeHtml(str) {
-  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
+  }[character]));
+}
+
+function safeHttpUrl(value) {
+  if (!value) return '';
+  try {
+    const url = new URL(String(value));
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
 }
 
 async function refreshMembers() {
@@ -1072,11 +1125,14 @@ async function refreshCurrentProfile() {
 async function handleGoogleSignIn(response) {
   if (!db.ready) { notConfiguredToast(); return; }
   try {
+    welcomeSelfHealAttempted = false;
     currentSession = await db.auth.signInWithGoogleIdToken(response.credential);
     await refreshCurrentProfile();
+    await maybeSelfHealWelcome();
     await refreshMembers();
     closeAuthModal();
     updateAuthUI();
+    await pollMessages();
     showToast('Signed in with Google!');
     switchTab('directory');
   } catch (e) {
@@ -1145,11 +1201,14 @@ async function doLogin() {
   const password = document.getElementById('l-password').value;
   if(!email || !password) { showAuthError('login-error', 'Please enter your email and password.'); return; }
   try {
+    welcomeSelfHealAttempted = false;
     currentSession = await db.auth.signInWithPassword(email, password);
     await refreshCurrentProfile();
+    await maybeSelfHealWelcome();
     await refreshMembers();
     closeAuthModal();
     updateAuthUI();
+    await pollMessages();
     showToast('Welcome back!');
     switchTab('directory');
   } catch (e) {
@@ -1181,6 +1240,12 @@ async function doLogout() {
   await db.auth.signOut();
   currentSession = null;
   currentProfile = null;
+  welcomeSelfHealAttempted = false;
+  activeThreadOtherUserId = null;
+  threadsCache = [];
+  membershipPollToken += 1;
+  window.stripeCheckout.clearExpectedPlan();
+  updateUnreadBadge(0);
   updateAuthUI();
   // Return to welcome page
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -1232,26 +1297,89 @@ function updateAuthUI() {
 
 function refreshHeaderAvatar(acct, m) {
   const el = document.getElementById('header-avatar');
-  // Priority: uploaded photo > Google avatar (from Supabase user metadata) > initials
-  const googlePicture = acct?.user_metadata?.avatar_url || acct?.user_metadata?.picture;
-  if(m && m.photo) {
-    el.innerHTML = `<img src="${m.photo}" alt="">`;
-  } else if(googlePicture) {
-    el.innerHTML = `<img src="${googlePicture}" alt="">`;
-  } else if(m) {
-    el.innerHTML = (m.first[0] + (m.last[0] || '')).toUpperCase();
+  const uploadedPhoto = safeHttpUrl(m?.photo);
+  const googlePhoto = safeHttpUrl(acct?.user_metadata?.avatar_url || acct?.user_metadata?.picture);
+  if (uploadedPhoto) {
+    el.innerHTML = `<img src="${esc(uploadedPhoto)}" alt="">`;
+  } else if (googlePhoto) {
+    el.innerHTML = `<img src="${esc(googlePhoto)}" alt="">`;
+  } else if (m) {
+    el.textContent = ((m.first?.[0] || '') + (m.last?.[0] || '')).toUpperCase() || '?';
   } else {
-    el.innerHTML = '?';
+    el.textContent = '?';
   }
 }
 
 // ── WELCOME STATS ──
 async function updateWelcomeStats() {
-  const stats = await db.stats.get();
-  document.getElementById('w-members').textContent = stats.members_count;
-  document.getElementById('w-states').textContent  = stats.states_count;
-  document.getElementById('w-lobs').textContent    = stats.lobs_count;
-  document.getElementById('w-specs').textContent   = stats.specs_count;
+  try {
+    const stats = await db.stats.get();
+    document.getElementById('w-members').textContent = stats.members_count;
+    document.getElementById('w-states').textContent  = stats.states_count;
+    document.getElementById('w-lobs').textContent    = stats.lobs_count;
+    document.getElementById('w-specs').textContent   = stats.specs_count;
+  } catch (e) {
+    console.error(e);
+    ['w-members', 'w-states', 'w-lobs', 'w-specs'].forEach((id) => {
+      document.getElementById(id).textContent = '0';
+    });
+  }
+}
+
+
+async function loadEmailPreferences() {
+  const toggle = document.getElementById('email-notifications-toggle');
+  if (!toggle || !currentProfile) return;
+  const requestToken = ++emailPrefsRequestToken;
+  toggle.disabled = true;
+  try {
+    const enabled = await db.prefs.get();
+    if (requestToken !== emailPrefsRequestToken) return;
+    toggle.checked = enabled;
+    toggle.disabled = false;
+  } catch (error) {
+    if (requestToken !== emailPrefsRequestToken) return;
+    toggle.disabled = true;
+    console.error(error);
+    showToast('Could not load email preferences.');
+  }
+}
+
+async function toggleEmailNotifications(toggle) {
+  const requestToken = ++emailPrefsRequestToken;
+  const desired = toggle.checked;
+  const previous = !desired;
+  toggle.disabled = true;
+  try {
+    const enabled = await db.prefs.set(desired);
+    if (requestToken !== emailPrefsRequestToken) return;
+    toggle.checked = enabled;
+    toggle.disabled = false;
+    showToast(enabled ? 'Email notifications enabled.' : 'Email notifications disabled.');
+  } catch (error) {
+    if (requestToken !== emailPrefsRequestToken) return;
+    toggle.checked = previous;
+    toggle.disabled = false;
+    showToast(error.message || 'Could not save email preferences.');
+  }
+}
+
+async function sendWelcomeAfterProfileSave() {
+  try {
+    await db.welcome.send();
+  } catch (error) {
+    console.error('Welcome email request failed:', error);
+  }
+}
+
+async function maybeSelfHealWelcome() {
+  if (welcomeSelfHealAttempted || !currentSession || !currentProfile) return;
+  welcomeSelfHealAttempted = true;
+  try {
+    await db.welcome.send();
+  } catch (error) {
+    console.error('Welcome email recovery request failed:', error);
+  }
 }
 
 // ── MY PROFILE PANEL ──
@@ -1274,13 +1402,14 @@ function loadProfilePanel() {
   const tierLabels = { free: 'Free', basic: 'Basic', pro: 'Pro' };
   document.getElementById('membership-tier-label').textContent = tierLabels[m.tier] || 'Free';
   renderMembershipOptions();
+  void loadEmailPreferences();
 
-  const circle  = document.getElementById('profile-photo-circle');
-  const photo   = m.photo;
-  const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
+  const circle = document.getElementById('profile-photo-circle');
+  const photo = safeHttpUrl(m.photo);
+  const initStr = ((m.first?.[0] || '') + (m.last?.[0] || '')).toUpperCase() || '?';
   circle.innerHTML = photo
-    ? `<img src="${photo}" alt=""><div class="photo-overlay">Change</div>`
-    : `${initStr}<div class="photo-overlay">Upload</div>`;
+    ? `<img src="${esc(photo)}" alt=""><div class="photo-overlay">Change</div>`
+    : `${esc(initStr)}<div class="photo-overlay">Upload</div>`;
 
   pSelectedStates.length = 0;
   m.states.forEach(s => pSelectedStates.push(s));
@@ -1313,6 +1442,7 @@ async function saveProfile() {
       bio: document.getElementById('p-bio').value.trim(),
       states: [...pSelectedStates], lobs, specs
     });
+    await sendWelcomeAfterProfileSave();
     await refreshMembers();
     populateFilters(); renderGrid(); updateAuthUI(); loadProfilePanel();
     showToast('Profile saved!');
@@ -1392,20 +1522,61 @@ function renderMembershipOptions() {
   const tier = currentProfile?.tier || 'free';
   const annual = document.getElementById('billing-annual-toggle').checked;
   const interval = annual ? 'year' : 'month';
-
   const available = tier === 'pro' ? [] : tier === 'basic' ? ['pro'] : ['basic', 'pro'];
 
-  if (!available.length) {
-    opts.innerHTML = `<div class="membership-maxed">You're on the top Pro tier — thanks for being a Maverick!</div>`;
-    return;
-  }
-
-  opts.innerHTML = available.map((plan, i) => {
+  const upgradeButtons = available.map((plan, index) => {
     const price = annual ? MEMBERSHIP_PRICES[plan].annual : MEMBERSHIP_PRICES[plan].monthly;
     const priceLabel = annual ? `$${price.toFixed(2)}/yr` : `$${price.toFixed(2)}/mo`;
     const planLabel = plan === 'pro' ? 'Pro' : 'Basic';
-    return `<button class="membership-option-btn ${i > 0 ? 'secondary' : ''}" onclick="startMembershipCheckout('${plan}','${interval}')">Upgrade to ${planLabel} — ${priceLabel}</button>`;
-  }).join('');
+    return `<button class="membership-option-btn ${index > 0 ? 'secondary' : ''}" onclick="startMembershipCheckout('${plan}','${interval}')">Upgrade to ${planLabel} — ${priceLabel}</button>`;
+  });
+
+  if (tier === 'basic' || tier === 'pro') {
+    upgradeButtons.push('<button class="membership-option-btn secondary" onclick="openBillingPortal()">Manage billing</button>');
+  }
+  if (tier === 'pro') {
+    upgradeButtons.unshift('<div class="membership-maxed">You’re on the top Pro tier — thanks for being a Maverick!</div>');
+  }
+  opts.innerHTML = upgradeButtons.join('');
+}
+
+async function openBillingPortal() {
+  if (!currentSession) { openAuthModal('login'); return; }
+  try {
+    await window.stripeCheckout.openBillingPortal(currentSession.access_token);
+  } catch (error) {
+    showToast(error.message || 'Could not open billing management.');
+  }
+}
+
+let membershipPollToken = 0;
+
+async function pollForExpectedTier(expectedPlan) {
+  if (!expectedPlan || !['basic', 'pro'].includes(expectedPlan)) {
+    window.stripeCheckout.clearExpectedPlan();
+    return;
+  }
+
+  const thisPoll = ++membershipPollToken;
+  for (let attempt = 0; attempt < 30 && thisPoll === membershipPollToken; attempt += 1) {
+    if (attempt > 0) await new Promise(resolve => setTimeout(resolve, 3000));
+    await refreshCurrentProfile();
+    if (currentProfile?.tier === expectedPlan) {
+      window.stripeCheckout.clearExpectedPlan();
+      await refreshMembers();
+      populateFilters();
+      renderGrid();
+      updateAuthUI();
+      if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
+      showToast('Membership activated!');
+      return;
+    }
+  }
+
+  if (thisPoll === membershipPollToken) {
+    window.stripeCheckout.clearExpectedPlan();
+    showToast('Membership activation is still processing. Please check again shortly.');
+  }
 }
 
 async function startMembershipCheckout(plan, interval) {
@@ -1413,40 +1584,98 @@ async function startMembershipCheckout(plan, interval) {
   if (!currentProfile) { showToast('Set up your profile before upgrading.'); return; }
   if (!currentSession) { openAuthModal('login'); return; }
   try {
-    await window.stripeCheckout.startCheckout(plan, interval, currentSession.access_token, getCurrentAccount()?.email);
-    // startCheckout redirects the browser to Stripe on success — nothing more to do here.
-  } catch (e) {
-    showToast(e.message || 'Could not start checkout.');
+    const result = await window.stripeCheckout.startCheckout(
+      plan,
+      interval,
+      currentSession.access_token
+    );
+    if (result?.updated) {
+      showToast('Plan updated. Activating your membership...');
+      await pollForExpectedTier(plan);
+    }
+  } catch (error) {
+    if (error.portalUrl) {
+      window.location.href = error.portalUrl;
+      return;
+    }
+    showToast(error.message || 'Could not start checkout.');
   }
 }
 
-// Stripe redirects back to "/?checkout=success" or "/?checkout=cancelled".
-// The webhook usually flips the tier within a second or two of payment,
-// so we refresh shortly after landing back rather than assuming it's
-// already reflected the instant the redirect completes.
-function handleCheckoutRedirect() {
+async function handleCheckoutRedirect() {
   const params = new URLSearchParams(window.location.search);
-  const status = params.get('checkout');
-  if (!status) return;
+  const checkoutStatus = params.get('checkout');
+  const billingReturn = params.get('billing');
+  if (!checkoutStatus && !billingReturn) return;
   history.replaceState(null, '', window.location.pathname);
 
-  if (status === 'success') {
-    showToast('Payment received! Activating your new membership...');
-    setTimeout(async () => {
-      await refreshCurrentProfile();
-      await refreshMembers();
-      renderGrid();
-      if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
-      showToast('Membership updated!');
-    }, 3000);
-  } else if (status === 'cancelled') {
+  if (checkoutStatus === 'cancelled') {
+    window.stripeCheckout.clearExpectedPlan();
     showToast('Checkout cancelled — no charge was made.');
+    return;
+  }
+
+  if (checkoutStatus === 'success') {
+    const expectedPlan = window.stripeCheckout.getExpectedPlan();
+    showToast('Payment received! Activating your new membership...');
+    if (expectedPlan) {
+      await pollForExpectedTier(expectedPlan);
+    } else {
+      await refreshCurrentProfile();
+      showToast('Membership activation is still processing. Please check again shortly.');
+    }
+    return;
+  }
+
+  if (billingReturn) {
+    await refreshCurrentProfile();
+    await refreshMembers();
+    populateFilters();
+    renderGrid();
+    if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
+    showToast('Billing management closed.');
   }
 }
 
-// ── MESSAGING (Pro members only — enforced server-side in send_message) ──
+// ── MESSAGING ──
+// A new conversation can target only a Pro member. Once a thread exists,
+// either participant can reply regardless of current tier.
 let threadsCache = [];
 let activeThreadOtherUserId = null;
+let messagePollTimer = null;
+
+function updateUnreadBadge(count) {
+  const badge = document.getElementById('messages-unread-badge');
+  const unread = Number(count) || 0;
+  badge.textContent = unread > 99 ? '99+' : String(unread);
+  badge.classList.toggle('show', unread > 0);
+}
+
+async function fetchThreads() {
+  threadsCache = await db.messaging.listThreads();
+  updateUnreadBadge(threadsCache.reduce((sum, thread) => sum + thread.unread, 0));
+}
+
+async function pollMessages() {
+  if (!currentSession || !db.ready) {
+    threadsCache = [];
+    updateUnreadBadge(0);
+    return;
+  }
+  try {
+    await fetchThreads();
+    if (document.getElementById('panel-messages')?.classList.contains('active')) {
+      await renderMessagesTab(true);
+    }
+  } catch (error) {
+    console.error('Message polling failed:', error);
+  }
+}
+
+function startMessagePolling() {
+  if (messagePollTimer) return;
+  messagePollTimer = window.setInterval(pollMessages, 30000);
+}
 
 function openMessageWith(userId) {
   if (!getCurrentAccount()) { openAuthModal('login'); return; }
@@ -1454,91 +1683,106 @@ function openMessageWith(userId) {
   switchTab('messages');
 }
 
-async function renderMessagesTab() {
+async function renderMessagesTab(useCachedThreads = false) {
   if (!db.ready) {
-    document.getElementById('msg-thread-list').innerHTML = `<div class="msg-empty-hint">Backend not configured yet — see SUPABASE_SETUP.md.</div>`;
+    document.getElementById('msg-thread-list').innerHTML = '<div class="msg-empty-hint">Backend not configured yet — see SUPABASE_SETUP.md.</div>';
     document.getElementById('msg-thread-pane').innerHTML = '';
     return;
   }
   try {
-    threadsCache = await db.messaging.listThreads();
-  } catch (e) {
-    showToast(e.message || 'Could not load conversations.');
+    if (!useCachedThreads) await fetchThreads();
+  } catch (error) {
+    showToast(error.message || 'Could not load conversations.');
     return;
   }
 
   const list = document.getElementById('msg-thread-list');
   list.innerHTML = threadsCache.length
-    ? threadsCache.map(t => `
-      <div class="msg-thread-row ${t.otherUserId === activeThreadOtherUserId ? 'active' : ''}" data-uid="${t.otherUserId}">
-        <div class="avatar avatar-md">${t.otherPhoto ? `<img src="${t.otherPhoto}" alt="">` : escapeHtml((t.otherFirst[0] + (t.otherLast[0] || '')).toUpperCase())}</div>
-        <div class="info">
-          <div class="nm">${escapeHtml(t.otherFirst)} ${escapeHtml(t.otherLast)} ${t.unread ? '<span class="msg-unread-dot"></span>' : ''}</div>
-          <div class="preview">${escapeHtml(t.lastBody || '')}</div>
-        </div>
-      </div>`).join('')
-    : `<div class="msg-empty-hint">No conversations yet.<br>Click MESSAGE on a Pro member's card to start one.</div>`;
+    ? threadsCache.map(thread => {
+      const photo = safeHttpUrl(thread.otherPhoto);
+      const initials = ((thread.otherFirst?.[0] || '') + (thread.otherLast?.[0] || '')).toUpperCase() || '?';
+      return `
+        <div class="msg-thread-row ${thread.otherUserId === activeThreadOtherUserId ? 'active' : ''}" data-uid="${esc(thread.otherUserId)}">
+          <div class="avatar avatar-md">${photo ? `<img src="${esc(photo)}" alt="">` : esc(initials)}</div>
+          <div class="info">
+            <div class="nm">${esc(thread.otherFirst)} ${esc(thread.otherLast)} ${thread.unread ? '<span class="msg-unread-dot"></span>' : ''}</div>
+            <div class="preview">${esc(thread.lastBody)}</div>
+          </div>
+        </div>`;
+    }).join('')
+    : '<div class="msg-empty-hint">No conversations yet.<br>Click MESSAGE on a Pro member’s card to start one.</div>';
 
   list.querySelectorAll('.msg-thread-row').forEach(row => {
     row.onclick = () => openThread(row.dataset.uid);
   });
 
-  if (activeThreadOtherUserId) await renderThreadPane(activeThreadOtherUserId);
-  else document.getElementById('msg-thread-pane').innerHTML = `<div class="msg-empty-hint">Select a conversation, or click MESSAGE on a Pro member's card.</div>`;
+  if (activeThreadOtherUserId) {
+    await renderThreadPane(activeThreadOtherUserId);
+  } else {
+    document.getElementById('msg-thread-pane').innerHTML =
+      '<div class="msg-empty-hint">Select a conversation, or click MESSAGE on a Pro member’s card.</div>';
+  }
 }
 
 async function openThread(otherUserId) {
   activeThreadOtherUserId = otherUserId;
-  await renderThreadPane(otherUserId);
-  const thread = threadsCache.find(t => t.otherUserId === otherUserId);
-  if (thread && thread.unread) {
-    try { await db.messaging.markRead(thread.threadId); } catch (e) { console.error(e); }
+  const thread = threadsCache.find(item => item.otherUserId === otherUserId);
+  if (thread?.unread) {
+    try { await db.messaging.markRead(thread.threadId); }
+    catch (error) { console.error('Could not mark thread read:', error); }
   }
   await renderMessagesTab();
 }
 
 async function renderThreadPane(otherUserId) {
-  const thread = threadsCache.find(t => t.otherUserId === otherUserId);
-  const other  = members.find(m => m.userId === otherUserId);
-  const pane   = document.getElementById('msg-thread-pane');
-  const meId   = getCurrentAccount()?.id;
+  const thread = threadsCache.find(item => item.otherUserId === otherUserId);
+  const other = members.find(member => member.userId === otherUserId);
+  const pane = document.getElementById('msg-thread-pane');
+  const myUserId = getCurrentAccount()?.id;
 
-  let msgs = [];
+  let messages = [];
   if (thread) {
-    try { msgs = await db.messaging.listMessages(thread.threadId); }
-    catch (e) { showToast(e.message || 'Could not load messages.'); }
+    try { messages = await db.messaging.listMessages(thread.threadId); }
+    catch (error) { showToast(error.message || 'Could not load messages.'); }
   }
 
-  const name = other ? `${other.first} ${other.last}` : (thread ? `${thread.otherFirst} ${thread.otherLast}` : 'Member');
+  const name = other
+    ? `${other.first} ${other.last}`
+    : thread
+      ? `${thread.otherFirst} ${thread.otherLast}`
+      : 'Member';
+
   pane.innerHTML = `
-    <div class="msg-thread-head">${escapeHtml(name)}</div>
+    <div class="msg-thread-head">${esc(name)}</div>
     <div class="msg-thread-body" id="msg-thread-body">
-      ${msgs.map(m => `<div class="msg-bubble ${m.sender_id === meId ? 'me' : 'them'}">${escapeHtml(m.body)}</div>`).join('')}
+      ${messages.map(message => `<div class="msg-bubble ${message.sender_id === myUserId ? 'me' : 'them'}">${esc(message.body)}</div>`).join('')}
     </div>
     <div class="msg-composer">
       <textarea id="msg-reply-text" placeholder="Type a message..." rows="1"></textarea>
-      <button class="send-btn" onclick="sendThreadMessage('${otherUserId}')">SEND</button>
+      <button class="send-btn" onclick="sendThreadMessage('${esc(otherUserId)}')">SEND</button>
     </div>
   `;
+
   const body = document.getElementById('msg-thread-body');
   body.scrollTop = body.scrollHeight;
-
-  const ta = document.getElementById('msg-reply-text');
-  ta.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendThreadMessage(otherUserId); }
+  document.getElementById('msg-reply-text').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      sendThreadMessage(otherUserId);
+    }
   });
 }
 
 async function sendThreadMessage(otherUserId) {
-  const ta = document.getElementById('msg-reply-text');
-  const text = ta.value.trim();
-  if (!text) return;
+  const textarea = document.getElementById('msg-reply-text');
+  const body = textarea.value.trim();
+  if (!body) return;
   try {
-    await db.messaging.send(otherUserId, text);
-    ta.value = '';
+    await db.messaging.send(otherUserId, body);
+    textarea.value = '';
     await renderMessagesTab();
-  } catch (e) {
-    showToast(e.message || 'Could not send message.');
+  } catch (error) {
+    showToast(error.message || 'Could not send message.');
   }
 }
 
@@ -1603,63 +1847,67 @@ function updateStats() {
 
 // ── RENDER GRID ──
 function renderGrid() {
-  const q      = document.getElementById('search-input').value.toLowerCase();
-  const sf     = document.getElementById('filter-state').value;
-  const lf     = document.getElementById('filter-lob').value;
-  const grid   = document.getElementById('member-grid');
-  const empty  = document.getElementById('empty-state');
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const stateFilter = document.getElementById('filter-state').value;
+  const lobFilter = document.getElementById('filter-lob').value;
+  const grid = document.getElementById('member-grid');
+  const empty = document.getElementById('empty-state');
 
-  const filtered = members.filter(m => {
-    const name = (m.first + ' ' + m.last + ' ' + (m.agency || '')).toLowerCase();
-    return (!q || name.includes(q)) && (!sf || m.states.includes(sf)) && (!lf || m.lobs.includes(lf));
+  const filtered = members.filter(member => {
+    const searchable = `${member.first} ${member.last} ${member.agency || ''}`.toLowerCase();
+    return (!query || searchable.includes(query))
+      && (!stateFilter || member.states.includes(stateFilter))
+      && (!lobFilter || member.lobs.includes(lobFilter));
   });
 
   document.getElementById('visible-count').textContent = filtered.length;
   grid.innerHTML = '';
-  if(!filtered.length) { empty.style.display = 'block'; return; }
+  if (!filtered.length) { empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  const meId = getCurrentAccount()?.id;
-
-  filtered.forEach((m, i) => {
-    const card    = document.createElement('div');
+  const myUserId = getCurrentAccount()?.id;
+  filtered.forEach((member, index) => {
+    const card = document.createElement('div');
     card.className = 'member-card';
-    card.style.animationDelay = (i * 0.04) + 's';
-    const photo   = m.photo;
-    const initStr = (m.first[0] + (m.last[0] || '')).toUpperCase();
-    const isPro   = m.tier === 'pro';
-    const isBasic = m.tier === 'basic';
-    const isSelf  = m.userId === meId;
+    card.style.animationDelay = (index * 0.04) + 's';
+
+    const photo = safeHttpUrl(member.photo);
+    const facebookUrl = safeHttpUrl(member.fb);
+    const initials = ((member.first?.[0] || '') + (member.last?.[0] || '')).toUpperCase() || '?';
+    const isPro = member.tier === 'pro';
+    const isBasic = member.tier === 'basic';
+    const isSelf = member.userId === myUserId;
     const tierLabel = isPro ? 'PRO' : isBasic ? 'BASIC' : 'FREE';
     const tierClass = isPro ? 'pro' : isBasic ? 'basic' : 'free';
 
-    let actionBtn;
+    const actions = [];
     if (isSelf) {
-      actionBtn = `<button class="contact-btn" onclick="switchTab('profile')">EDIT PROFILE</button>`;
-    } else if (isPro) {
-      actionBtn = `<button class="contact-btn" onclick="openMessageWith('${m.userId}')">MESSAGE</button>`;
-    } else if (m.fb) {
-      actionBtn = `<button class="contact-btn" onclick="window.open('${m.fb}','_blank')">VIEW PROFILE</button>`;
+      actions.push('<button class="contact-btn" onclick="switchTab(\'profile\')">EDIT PROFILE</button>');
     } else {
-      actionBtn = `<button class="contact-btn locked" title="Only Pro members are messageable">${isBasic ? 'BASIC MEMBER' : 'FREE MEMBER'}</button>`;
+      if ((isBasic || isPro) && facebookUrl) {
+        actions.push(`<a class="contact-btn" href="${esc(facebookUrl)}" target="_blank" rel="noopener noreferrer">VIEW PROFILE</a>`);
+      }
+      if (isPro) {
+        actions.push(`<button class="contact-btn" onclick="openMessageWith('${esc(member.userId)}')">MESSAGE</button>`);
+      }
     }
 
     card.innerHTML = `
       <div class="card-header">
-        <div class="avatar">${photo ? `<img src="${photo}" alt="${initStr}">` : initStr}</div>
+        <div class="avatar">${photo ? `<img src="${esc(photo)}" alt="${esc(initials)}">` : esc(initials)}</div>
         <div>
-          <div class="card-name">${escapeHtml(m.first)} ${escapeHtml(m.last)} <span class="tier-badge ${tierClass}">${tierLabel}</span></div>
-          <div class="card-location">${m.agency ? escapeHtml(m.agency) + ' &bull; ' : ''}${m.home}</div>
+          <div class="card-name">${esc(member.first)} ${esc(member.last)} <span class="tier-badge ${tierClass}">${tierLabel}</span></div>
+          <div class="card-location">${member.agency ? esc(member.agency) + ' &bull; ' : ''}${esc(member.home)}</div>
         </div>
       </div>
       <div class="card-section-label">Licensed States</div>
-      <div class="tag-row">${m.states.map(s => `<span class="tag tag-state">${s}</span>`).join('')}</div>
+      <div class="tag-row">${member.states.map(state => `<span class="tag tag-state">${esc(state)}</span>`).join('')}</div>
       <div class="card-section-label">Lines of Business</div>
-      <div class="tag-row">${m.lobs.map(l => `<span class="tag tag-lob">${l}</span>`).join('')}</div>
-      ${m.specs.length ? `<div class="card-section-label">Specializations</div><div class="tag-row">${m.specs.map(s => `<span class="tag tag-spec">${s}</span>`).join('')}</div>` : ''}
+      <div class="tag-row">${member.lobs.map(lob => `<span class="tag tag-lob">${esc(lob)}</span>`).join('')}</div>
+      ${member.specs.length ? `<div class="card-section-label">Specializations</div><div class="tag-row">${member.specs.map(spec => `<span class="tag tag-spec">${esc(spec)}</span>`).join('')}</div>` : ''}
       <div class="card-footer">
-        <span class="member-since">Joined ${m.joined}</span>
-        ${actionBtn}
+        <span class="member-since">Joined ${esc(member.joined)}</span>
+        ${actions.length ? `<div class="card-actions">${actions.join('')}</div>` : ''}
       </div>`;
     grid.appendChild(card);
   });
@@ -1704,6 +1952,7 @@ async function submitForm() {
       bio: document.getElementById('f-bio').value.trim(),
       fb: document.getElementById('f-fb').value.trim()
     });
+    await sendWelcomeAfterProfileSave();
     await refreshMembers();
 
     document.querySelectorAll('#panel-onboarding input[type=text], #panel-onboarding textarea').forEach(el => el.value = '');
@@ -1742,22 +1991,26 @@ async function init() {
 
   currentSession = await db.auth.getSession();
   await refreshCurrentProfile();
+  await maybeSelfHealWelcome();
   await refreshMembers();
 
   populateFilters();
   renderGrid();
   await updateWelcomeStats();
   updateAuthUI();
+  startMessagePolling();
+  await pollMessages();
 
   // If already logged in, go straight to directory
   if(getCurrentAccount()) {
     document.getElementById('panel-welcome').classList.remove('active');
     document.getElementById('panel-directory').classList.add('active');
     document.querySelector('[data-tab="directory"]').classList.add('active');
+    if (new URLSearchParams(window.location.search).get('tab') === 'messages') switchTab('messages');
   }
 
   // Pick up "?checkout=success|cancelled" after returning from Stripe
-  handleCheckoutRedirect();
+  void handleCheckoutRedirect();
 
   // Keep local state in sync with Supabase's own session lifecycle
   // (token refresh, sign-out from another tab, etc.)
@@ -1765,11 +2018,15 @@ async function init() {
     const wasLoggedIn = !!currentSession;
     currentSession = session;
     if (!!session !== wasLoggedIn) {
+      welcomeSelfHealAttempted = false;
       await refreshCurrentProfile();
+      await maybeSelfHealWelcome();
       await refreshMembers();
       populateFilters();
       renderGrid();
       updateAuthUI();
+      if (!session) activeThreadOtherUserId = null;
+      await pollMessages();
     }
   });
 }

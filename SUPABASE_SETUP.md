@@ -1,136 +1,56 @@
-# Supabase Setup — Insurance Mavericks Member Directory
+# Supabase setup
 
-The site's member database, auth, and photo storage all run on
-[Supabase](https://supabase.com) (hosted Postgres + Auth + Storage). This
-doc walks through standing up a project from scratch.
+The browser client is already configured for:
 
-## 1. Create the project
+- Project URL: https://krdjdzikepmkcjjibvqt.supabase.co
+- Public anon key: stored in public/supabase-client.js
 
-1. Go to https://supabase.com/dashboard and create a new project.
-2. Wait for provisioning to finish (a couple of minutes).
+The anon key is designed for browser use. The service-role key is not; keep it only in Netlify environment variables.
 
-## 2. Run the schema migration
+## Apply the schema
 
-1. Open **SQL Editor** in the dashboard.
-2. Paste the contents of `supabase/migrations/0001_init.sql` and run it.
-   This creates:
-   - `profiles` — one row per member (name, agency, home state, licensed
-     states/lines of business/specializations, bio, photo, Facebook link).
-   - `states`, `lines_of_business`, `specializations` — reference tables
-     mirroring the taxonomy used by the onboarding form.
-   - Row Level Security policies so the directory is members-only (any
-     signed-in user can read it; only the owner can edit/delete their own
-     row).
-   - Database functions (RPC): `get_directory_stats`, `search_directory`,
-     `upsert_my_profile`, `set_my_photo`, `delete_my_profile`.
-   - An `avatars` Storage bucket (public read, owner-only write) for
-     profile photos.
-3. Paste the contents of `supabase/migrations/0002_tiers_and_messaging.sql`
-   and run it. This adds:
-   - A `tier` column on `profiles` (`'free'` or `'pro'`) and a
-     `set_my_tier` RPC — a **self-service stub, not real billing**. Wire a
-     Stripe webhook (`checkout.session.completed` → `update profiles set
-     tier = 'pro' where user_id = ...`) before charging real money.
-   - `message_threads` / `messages` tables for direct messaging, with RLS
-     that only lets a thread's two participants read it, and no direct
-     write access — all writes go through `send_message()`, which
-     enforces **"only Pro members are messageable"** server-side (not
-     just in the UI).
-   - RPCs: `send_message`, `list_my_threads`, `mark_thread_read`.
+Run the migrations in order from the Supabase SQL Editor:
 
-If you'd rather use the CLI: `supabase link` then
-`supabase db push` from the project root (applies both migrations in
-order).
+1. supabase/migrations/0001_init.sql
+2. supabase/migrations/0002_tiers_and_messaging.sql
+3. supabase/migrations/0003_harden_tiers_and_messaging.sql
 
-## 3. Get your API keys
+Do not attempt to run migrations with the anon key. Migration 0003 revokes direct browser mutation of profiles, adds protected Stripe identifiers, replaces profile-returning RPCs with safe explicit shapes, and hardens messaging.
 
-1. **Project Settings → API**.
-2. Copy the **Project URL** and the **anon public** key.
-3. Open `supabase-client.js` in this repo and set:
+## Security model
 
-   ```js
-   const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
-   const SUPABASE_ANON_KEY = 'eyJhbGciOi...';
-   ```
+- Signed-in members can read the safe directory columns.
+- stripe_customer_id and stripe_subscription_id are never granted to anon or authenticated.
+- Browser profile creates, edits, photo changes, tier resets, and deletion use SECURITY DEFINER RPCs.
+- Direct INSERT, UPDATE, and DELETE on profiles are revoked from browser roles.
+- Only set_my_tier('free') is allowed for self-service tier reset; paid tiers are written by the Stripe webhook with the service role.
+- A new message thread requires a Pro recipient and a sender profile.
+- Either participant may reply after a thread exists, regardless of current tier.
+- Deleted profiles appear as Former member in existing thread lists.
 
-   Until both are set (they default to the placeholder strings), the site
-   runs with an empty directory and auth buttons show a
-   "Backend not configured" toast instead of erroring.
+## Authentication
 
-## 4. (Optional) Enable Google Sign-In
+Email/password authentication works through Supabase Auth. Configure the production Site URL and allowed redirect URLs under Authentication URL configuration.
 
-The page already has a Google Identity Services button wired up
-(`GOOGLE_CLIENT_ID` near the top of `index.html`'s script). To make it
-actually sign people into Supabase:
+Google is intentionally not configured, so its sign-in UI stays hidden. Follow DEPLOY.md when it is enabled later.
 
-1. Follow the existing comment in `index.html` to create a Google OAuth
-   Client ID and set `GOOGLE_CLIENT_ID`.
-2. In Supabase: **Authentication → Providers → Google** → enable it, and
-   paste the **same Client ID** into the "Authorized Client IDs" field
-   (this project uses Supabase's `signInWithIdToken` flow, so Supabase
-   needs to recognize tokens minted for that client).
-3. No separate OAuth secret/redirect setup is needed for this flow — the
-   Google button hands its ID token straight to
-   `supabase.auth.signInWithIdToken`.
+## Avatar storage
 
-Email/password sign-up works out of the box with no extra configuration
-(Supabase's built-in email auth). If you want to skip email confirmation
-during testing, turn it off under **Authentication → Providers → Email →
-Confirm email**.
+Migration 0001 creates the public avatars bucket. Authenticated members can write only within their own user-id folder. Deleting a profile does not automatically delete existing storage objects.
 
-## 5. Deploy
+## Verification after 0003
 
-This is a static site (see `netlify.toml`) — the Supabase URL/anon key are
-public, client-safe values (RLS is what actually protects the data), so
-they can be committed and shipped as-is. No environment variables or
-build step are required.
+Use a throwaway authenticated account and confirm:
 
-## What's where
+1. upsert_my_profile creates only a Free profile.
+2. Direct profile INSERT/UPDATE/DELETE is rejected.
+3. Direct tier changes and Stripe identifier writes are rejected.
+4. Stripe identifier columns cannot be selected through the browser role.
+5. set_my_tier('free') succeeds.
+6. send_message rejects a new non-Pro recipient.
+7. send_message rejects a profile-less sender.
+8. Existing-thread replies remain possible for both participants.
 
-| File | Purpose |
-|---|---|
-| `supabase/migrations/0001_init.sql` | Core schema: `profiles`, taxonomy tables, RLS, storage bucket. Re-runnable (`create ... if not exists` / `on conflict do nothing` throughout). |
-| `supabase/migrations/0002_tiers_and_messaging.sql` | Membership `tier` column + Pro-only messaging (`message_threads`, `messages`, RLS, RPCs). Re-runnable. |
-| `supabase-client.js` | Thin data-access layer (`window.db`) wrapping Supabase auth, profile CRUD, photo upload, directory stats, and messaging. `index.html` calls into this instead of talking to `supabase-js` directly. |
-| `index.html` | UI + wiring. Auth (email/password + Google), onboarding form, profile editing, the directory grid, membership upgrade, and the Messages tab all go through `window.db`. |
+Delete the throwaway profile through delete_my_profile when finished. The Supabase Auth user and any uploaded avatar objects may remain and can be removed separately by an administrator.
 
-## Feature audit — signup → profile → directory → messaging
-
-- **Sign up**: email/password (`doSignup`) or Google (`handleGoogleSignIn`)
-  create a real Supabase Auth user. Email sign-up respects whatever
-  email-confirmation setting you have in Authentication → Providers.
-- **Build a profile**: the "Join / Onboard" tab calls `upsert_my_profile`.
-  Required fields (name, a valid home state, at least one licensed state
-  and line of business) are validated client-side against `STATES` before
-  the call, and enforced again by table constraints server-side.
-- **See other members**: the directory grid reads `profiles` through RLS
-  that requires the caller to be `authenticated` — any signed-in member,
-  regardless of tier, can browse the full directory.
-- **Pro messaging**: the Messages tab (`renderMessagesTab` /
-  `openThread` / `sendThreadMessage` in `index.html`) lists threads via
-  `list_my_threads` and sends via `send_message`. A member card only
-  shows a **MESSAGE** button when that member's `tier = 'pro'`; the same
-  rule is enforced again inside `send_message()` itself, so it can't be
-  bypassed by calling the API directly.
-- **Membership upgrades** (Basic/Pro) go through real Stripe Checkout,
-  not a self-service toggle — see **STRIPE_SETUP.md** for that whole
-  flow. `set_my_tier()` in the database only allows self-downgrading to
-  `'free'`; paid tiers are granted exclusively by the Stripe webhook.
-
-## Extending the schema
-
-Add new capabilities (referral tracking, real billing, etc.) as
-additional tables + RPC functions in a new `supabase/migrations/000N_*.sql`
-file, and extend `supabase-client.js` with matching wrapper methods —
-keep `index.html` talking to `window.db` only, never to `supabase-js`
-directly, so the data layer stays swappable.
-
-## Full account deletion
-
-`delete_my_profile()` removes a member's directory listing but not their
-Supabase Auth account (deleting `auth.users` requires the service-role
-key, which must never ship to the browser). To offer full account
-deletion, add a Supabase Edge Function that uses
-`supabase.auth.admin.deleteUser()` with the service role key kept
-server-side, and call it from the client instead of/after
-`delete_my_profile()`.
+See DEPLOY.md for the complete deployment and smoke-test checklist.

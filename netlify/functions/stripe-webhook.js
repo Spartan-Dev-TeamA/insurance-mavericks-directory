@@ -1,89 +1,251 @@
-/* ============================================================
-   Insurance Mavericks — Stripe Webhook
-   Upgrades/downgrades a member's profile tier when Stripe confirms a
-   subscription actually got paid for (or cancelled). This is the one
-   place tier changes to 'basic'/'pro' are allowed to happen — the
-   database's set_my_tier() RPC only permits self-downgrading to 'free'.
-
-   Configure in the Stripe dashboard: Developers -> Webhooks -> Add
-   endpoint -> https://<your-site>/.netlify/functions/stripe-webhook
-   Events to send: checkout.session.completed, customer.subscription.deleted
-
-   Required environment variables (set in Netlify, never in git):
-     STRIPE_SECRET_KEY          — sk_live_... / sk_test_...
-     STRIPE_WEBHOOK_SECRET      — whsec_... (from the endpoint you create above)
-     SUPABASE_URL               — same project URL as supabase-client.js
-     SUPABASE_SERVICE_ROLE_KEY  — Project Settings -> API -> service_role
-                                   (bypasses RLS — server-side only, NEVER
-                                   ship this to the browser)
-   See ../../STRIPE_SETUP.md for the full walkthrough.
-   ============================================================ */
 const Stripe = require('stripe');
 const { createClient } = require('@supabase/supabase-js');
+const { sendMembershipConfirmation } = require('./lib/email');
+
+const STATUS_RANK = {
+  active: 1, trialing: 1, past_due: 2, unpaid: 2, paused: 2,
+  incomplete: 3, incomplete_expired: 4, canceled: 4
+};
+const LIVE_STATUSES = new Set(['active', 'trialing', 'past_due', 'unpaid', 'paused', 'incomplete']);
+
+function customerIdOf(value) {
+  return typeof value === 'string' ? value : (value && value.id) || null;
+}
+
+async function listAllSubscriptions(stripe, customerId) {
+  const all = [];
+  let startingAfter;
+  do {
+    const page = await stripe.subscriptions.list({
+      customer: customerId, status: 'all', limit: 100,
+      ...(startingAfter ? { starting_after: startingAfter } : {})
+    });
+    all.push(...page.data);
+    startingAfter = page.has_more ? page.data[page.data.length - 1].id : null;
+  } while (startingAfter);
+  return all;
+}
+
+function electWinner(subscriptions) {
+  return [...subscriptions].sort((a, b) =>
+    (STATUS_RANK[a.status] || 4) - (STATUS_RANK[b.status] || 4)
+    || b.created - a.created
+    || b.id.localeCompare(a.id)
+  )[0] || null;
+}
+
+function priceOf(subscription) {
+  return subscription && subscription.items && subscription.items.data &&
+    subscription.items.data[0] && subscription.items.data[0].price || null;
+}
+
+function priceIdOf(subscription) {
+  const price = priceOf(subscription);
+  return price && price.id || null;
+}
+
+function intervalOf(subscription) {
+  const interval = priceOf(subscription) && priceOf(subscription).recurring &&
+    priceOf(subscription).recurring.interval;
+  return interval === 'year' ? 'year' : 'month';
+}
+
+function tierFor(subscription, priceToTier) {
+  if (!subscription || !['active', 'trialing'].includes(subscription.status)) return 'free';
+  return priceToTier.get(priceIdOf(subscription)) || 'free';
+}
+
+function transitionFor(priorTier, newTier) {
+  if (priorTier === newTier) return null;
+  if (priorTier === 'free' && newTier !== 'free') return 'activated';
+  if (priorTier !== 'free' && newTier === 'free') return 'cancelled';
+  if (priorTier !== 'free' && newTier !== 'free') return 'updated';
+  return null;
+}
+
+async function profileBy(supabase, column, value) {
+  if (!value) return null;
+  const { data, error } = await supabase.from('profiles')
+    .select('user_id,tier,stripe_customer_id,stripe_subscription_id')
+    .eq(column, value)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function claimTierTransition(supabase, profile, newTier, values) {
+  const { data, error } = await supabase.from('profiles')
+    .update({ ...values, tier: newTier })
+    .eq('user_id', profile.user_id)
+    .eq('tier', profile.tier)
+    .select('user_id');
+  if (error) throw error;
+  if (data && data.length === 1) {
+    return { owned: true, transition: transitionFor(profile.tier, newTier) };
+  }
+  if (data && data.length > 1) throw new Error('Tier CAS matched more than one profile.');
+
+  const reread = await profileBy(supabase, 'user_id', profile.user_id);
+  if (reread && reread.tier === newTier) {
+    return { owned: false, transition: null };
+  }
+  throw new Error('Tier CAS lost without the requested tier being committed.');
+}
+
+function isStripeNotFound(error) {
+  return error && (error.statusCode === 404 || error.code === 'resource_missing');
+}
+
+async function retrieveCurrentSubscription(stripe, subscriptionId) {
+  try {
+    return await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (error) {
+    if (isStripeNotFound(error)) return null;
+    throw error;
+  }
+}
+
+async function cancelDuplicate(stripe, subscription) {
+  try {
+    await stripe.subscriptions.cancel(subscription.id, { prorate: true, invoice_now: false });
+  } catch (error) {
+    if (isStripeNotFound(error)) return;
+    const current = await retrieveCurrentSubscription(stripe, subscription.id);
+    if (!current || !LIVE_STATUSES.has(current.status)) return;
+    throw error;
+  }
+}
+
+async function sendOwnedConfirmation(supabase, stripeEvent, profile, claim, newTier, subscription) {
+  if (!claim.owned || !claim.transition) return;
+  try {
+    const { data, error } = await supabase.auth.admin.getUserById(profile.user_id);
+    if (error) throw error;
+    const email = data && data.user && data.user.email;
+    if (!email) {
+      console.warn('Membership confirmation skipped because the member has no deliverable auth email.');
+      return;
+    }
+    await sendMembershipConfirmation({
+      to: email,
+      transition: claim.transition,
+      tier: newTier,
+      interval: intervalOf(subscription),
+      idempotencyKey: 'stripe-' + stripeEvent.id
+    });
+  } catch (error) {
+    console.error('Membership confirmation email failed:', error && error.message || 'unknown error');
+  }
+}
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method not allowed' };
-  }
+  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' };
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
-    console.error('Stripe webhook missing required env vars (STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)');
+  const required = [
+    'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_PRICE_BASIC_MONTHLY',
+    'STRIPE_PRICE_BASIC_ANNUAL', 'STRIPE_PRICE_PRO_MONTHLY',
+    'STRIPE_PRICE_PRO_ANNUAL'
+  ];
+  const missing = required.filter((name) => !process.env[name]);
+  if (missing.length) {
+    console.error('Stripe webhook missing environment variables:', missing.join(', '));
     return { statusCode: 500, body: 'Server not configured' };
   }
 
-  const stripe = Stripe(stripeSecretKey);
-  const sig = event.headers['stripe-signature'];
+  const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const signature = event.headers['stripe-signature'];
   const rawBody = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body;
 
   let stripeEvent;
   try {
-    stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-  } catch (err) {
-    console.error('Stripe webhook signature verification failed:', err.message);
-    return { statusCode: 400, body: `Webhook Error: ${err.message}` };
+    stripeEvent = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (error) {
+    console.error('Stripe webhook signature verification failed:', error.message);
+    return { statusCode: 400, body: 'Webhook Error: ' + error.message };
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const priceToTier = new Map([
+    [process.env.STRIPE_PRICE_BASIC_MONTHLY, 'basic'],
+    [process.env.STRIPE_PRICE_BASIC_ANNUAL, 'basic'],
+    [process.env.STRIPE_PRICE_PRO_MONTHLY, 'pro'],
+    [process.env.STRIPE_PRICE_PRO_ANNUAL, 'pro']
+  ]);
 
   try {
-    switch (stripeEvent.type) {
-      case 'checkout.session.completed': {
-        const session = stripeEvent.data.object;
-        const userId = session.metadata?.supabase_user_id || session.client_reference_id;
-        const plan = session.metadata?.plan;
-        if (userId && (plan === 'basic' || plan === 'pro')) {
-          const { error } = await supabase.from('profiles').update({ tier: plan }).eq('user_id', userId);
-          if (error) console.error('Failed to upgrade profile tier:', error);
-        } else {
-          console.error('checkout.session.completed missing supabase_user_id/plan metadata', session.id);
+    if (stripeEvent.type === 'checkout.session.completed') {
+      const session = stripeEvent.data.object;
+      const customerId = customerIdOf(session.customer);
+      if (!customerId) throw new Error('Completed Checkout Session has no Stripe customer.');
+
+      const subscriptions = await listAllSubscriptions(stripe, customerId);
+      const winner = electWinner(subscriptions);
+      for (const subscription of subscriptions) {
+        if (winner && subscription.id !== winner.id && LIVE_STATUSES.has(subscription.status)) {
+          await cancelDuplicate(stripe, subscription);
         }
-        break;
       }
 
-      case 'customer.subscription.deleted': {
-        const subscription = stripeEvent.data.object;
-        const userId = subscription.metadata?.supabase_user_id;
-        if (userId) {
-          const { error } = await supabase.from('profiles').update({ tier: 'free' }).eq('user_id', userId);
-          if (error) console.error('Failed to downgrade profile tier:', error);
-        }
-        break;
+      let profile = await profileBy(supabase, 'stripe_customer_id', customerId);
+      if (!profile) {
+        const metadataUserId = session.metadata && session.metadata.supabase_user_id ||
+          session.client_reference_id;
+        profile = await profileBy(supabase, 'user_id', metadataUserId);
       }
+      if (!profile) throw new Error('Checkout reconciliation could not resolve exactly one member profile.');
 
-      default:
-        // Other events (invoice.paid, subscription.updated, etc.) aren't
-        // handled yet — add cases here as the billing flow grows.
-        break;
+      const newTier = tierFor(winner, priceToTier);
+      const claim = await claimTierTransition(supabase, profile, newTier, {
+        stripe_customer_id: customerId,
+        stripe_subscription_id: winner && winner.id || null
+      });
+      await sendOwnedConfirmation(supabase, stripeEvent, profile, claim, newTier, winner);
+
+      return { statusCode: 200, body: JSON.stringify({ received: true, reconciled: true }) };
     }
 
-    return { statusCode: 200, body: JSON.stringify({ received: true }) };
-  } catch (err) {
-    console.error('Stripe webhook handler error:', err);
+    if (stripeEvent.type === 'customer.subscription.updated'
+        || stripeEvent.type === 'customer.subscription.deleted') {
+      const eventSubscription = stripeEvent.data.object;
+      const subscriptionId = eventSubscription.id;
+
+      let profile = await profileBy(supabase, 'stripe_subscription_id', subscriptionId);
+      if (!profile) {
+        const metadataUserId = eventSubscription.metadata && eventSubscription.metadata.supabase_user_id;
+        if (!metadataUserId) {
+          throw new Error('Subscription event has no existing association or metadata user id.');
+        }
+        profile = await profileBy(supabase, 'user_id', metadataUserId);
+        if (!profile) throw new Error('Subscription event did not resolve a member profile.');
+        if (profile.stripe_subscription_id && profile.stripe_subscription_id !== subscriptionId) {
+          return { statusCode: 200, body: JSON.stringify({ received: true, discardedDuplicate: true }) };
+        }
+      }
+
+      const current = await retrieveCurrentSubscription(stripe, subscriptionId);
+      const currentCustomerId = customerIdOf(current && current.customer)
+        || customerIdOf(eventSubscription.customer)
+        || profile.stripe_customer_id;
+      const newTier = tierFor(current, priceToTier);
+      const claim = await claimTierTransition(supabase, profile, newTier, {
+        stripe_customer_id: currentCustomerId,
+        stripe_subscription_id: subscriptionId
+      });
+      await sendOwnedConfirmation(
+        supabase, stripeEvent, profile, claim, newTier, current || eventSubscription
+      );
+
+      return { statusCode: 200, body: JSON.stringify({ received: true }) };
+    }
+
+    return { statusCode: 200, body: JSON.stringify({ received: true, ignored: true }) };
+  } catch (error) {
+    console.error('Stripe webhook handler failed:', error);
     return { statusCode: 500, body: 'Webhook handler error' };
   }
+};
+
+exports.__test = {
+  electWinner, tierFor, transitionFor, intervalOf, claimTierTransition
 };
