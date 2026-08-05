@@ -203,6 +203,12 @@ window.db = {
       const { data, error } = await sb.rpc('get_directory_stats');
       if (error) throw error;
       return data[0];
+    },
+
+    async getStateCoverage() {
+      const { data, error } = await sb.rpc('get_state_coverage_counts');
+      if (error) throw error;
+      return data || [];
     }
   },
 

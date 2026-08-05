@@ -4,16 +4,19 @@ This repository deploys as a static Netlify site from `public/` with serverless 
 
 ## 1. Supabase migrations
 
-Run all four SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
+Run all five SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
 
 1. `supabase/migrations/0001_init.sql`
 2. `supabase/migrations/0002_tiers_and_messaging.sql`
 3. `supabase/migrations/0003_harden_tiers_and_messaging.sql`
 4. `supabase/migrations/0004_email_notifications.sql`
+5. `supabase/migrations/0005_state_coverage_stats.sql`
 
 The browser anon key cannot apply schema changes. Never expose `SUPABASE_SERVICE_ROLE_KEY` in `public/` or any browser code.
 
 After migration 0004, verify that authenticated callers can select only `id`, `user_low`, `user_high`, and `created_at` from `message_threads`; the notification claim columns must remain server-only. Also verify a participant can still read `messages` through RLS and a non-participant cannot.
+
+Migration 0005 adds `get_state_coverage_counts()`, a public SECURITY DEFINER RPC (matching `get_directory_stats()`'s existing pattern) that powers the public Map tab's per-state licensed-coverage counts for logged-out visitors, without exposing individual profile rows to anon.
 
 ## 2. Stripe catalog
 

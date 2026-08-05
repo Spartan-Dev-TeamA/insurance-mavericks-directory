@@ -182,7 +182,7 @@
 
   #google-btn-container { display: flex; justify-content: center; }
 
-  /* ── TABS (hidden when logged out) ── */
+  /* ── ALWAYS-VISIBLE PRIMARY NAV ── */
   .tabs {
     display: flex; gap: 4px;
     padding: 20px 32px 0;
@@ -214,141 +214,198 @@
   .panel.active { display: block; }
 
   /* ── WELCOME PANEL ── */
+  #panel-welcome { margin: -28px -32px 0; }
   .welcome-wrap {
-    min-height: calc(100vh - 64px);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    padding: 60px 24px 80px;
-    position: relative; overflow: hidden;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 16% 12%, rgba(29,185,84,0.14), transparent 28%),
+      linear-gradient(180deg, #0b1710 0%, var(--black) 62%);
   }
-
-  /* Radial glow behind heading */
   .welcome-wrap::before {
     content: '';
-    position: absolute;
-    top: -10%; left: 50%;
-    transform: translateX(-50%);
-    width: 700px; height: 500px;
-    background: radial-gradient(ellipse, rgba(29,185,84,0.07) 0%, transparent 70%);
+    position: absolute; inset: 0;
     pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, #000, transparent 60%);
   }
-
+  .welcome-hero {
+    position: relative;
+    z-index: 1;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 78px 32px 64px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr);
+    gap: 58px;
+    align-items: center;
+  }
+  .welcome-copy { max-width: 660px; }
   .welcome-badge {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: rgba(29,185,84,0.08);
-    border: 1px solid rgba(29,185,84,0.2);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 11px; font-weight: 600;
-    color: var(--green); letter-spacing: 2px;
-    text-transform: uppercase;
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 28px;
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-bottom: 24px; padding: 7px 14px;
+    border: 1px solid rgba(29,185,84,.28); border-radius: 999px;
+    color: var(--green); background: rgba(29,185,84,.08);
+    font: 600 10px/1 'DM Mono', monospace;
+    text-transform: uppercase; letter-spacing: 1.8px;
   }
-  .welcome-badge::before { content: '●'; font-size: 7px; }
-
+  .welcome-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
   .welcome-title {
+    max-width: 760px;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(52px, 9vw, 100px);
-    letter-spacing: 4px;
-    color: var(--text);
-    line-height: 0.92;
-    margin-bottom: 28px;
+    font-size: clamp(54px, 7vw, 94px);
+    letter-spacing: 2px; line-height: .94;
+    color: var(--text); margin-bottom: 24px;
   }
   .welcome-title .hl { color: var(--green); }
-
   .welcome-desc {
-    font-size: 17px; color: var(--muted);
-    max-width: 500px; line-height: 1.75;
-    margin-bottom: 44px;
+    max-width: 620px; margin-bottom: 30px;
+    color: #aaa; font-size: 17px; line-height: 1.7;
   }
-
-  /* Stats row */
-  .welcome-stats {
-    display: flex; gap: 10px;
-    margin-bottom: 48px;
-    flex-wrap: wrap; justify-content: center;
-  }
-
+  .welcome-stats { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 30px; }
   .welcome-stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 22px;
-    min-width: 100px;
+    min-width: 116px; padding: 11px 14px;
+    display: flex; align-items: baseline; gap: 7px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: rgba(17,17,17,.72);
   }
-  .welcome-stat-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px; color: var(--green); line-height: 1;
+  .welcome-stat-num { color: var(--green); font: 500 20px/1 'DM Mono', monospace; }
+  .welcome-stat-label { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .welcome-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btn-primary, .btn-outline {
+    border-radius: 7px; padding: 14px 26px;
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    font-weight: 800; letter-spacing: 1.3px; cursor: pointer;
+    transition: .2s ease;
   }
-  .welcome-stat-label {
-    font-size: 10px; text-transform: uppercase;
-    letter-spacing: 1.5px; color: var(--muted);
-    font-weight: 600; margin-top: 2px;
-  }
-
-  /* CTA buttons */
-  .welcome-actions {
-    display: flex; gap: 12px;
-    flex-wrap: wrap; justify-content: center;
-    margin-bottom: 20px;
-  }
-
-  .btn-primary {
-    background: var(--green); color: #000;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px; letter-spacing: 3px;
-    border: none; padding: 15px 40px;
-    border-radius: 8px; cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-  }
-  .btn-primary:hover  { background: #22d660; transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
-
-  .btn-outline {
-    background: transparent; color: var(--text);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px; letter-spacing: 3px;
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 15px 40px; border-radius: 8px;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
+  .btn-primary { border: 1px solid var(--green); background: var(--green); color: #071109; }
+  .btn-primary:hover { background: #25d864; border-color: #25d864; transform: translateY(-1px); }
+  .btn-outline { border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.14); color: var(--text); }
   .btn-outline:hover { border-color: var(--green); color: var(--green); }
+  .welcome-note { margin-top: 16px; color: #666; font: 10px/1.5 'DM Mono', monospace; }
 
-  .welcome-note {
-    font-size: 11px; color: #444;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.5px;
+  .directory-preview {
+    border: 1px solid rgba(255,255,255,.09); border-radius: 16px;
+    background: rgba(15,18,16,.92); box-shadow: 0 24px 80px rgba(0,0,0,.42);
+    overflow: hidden; transform: rotate(1deg);
+  }
+  .preview-head {
+    display: flex; justify-content: space-between; gap: 16px; align-items: center;
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+  }
+  .preview-kicker { color: var(--green); font: 600 9px/1 'DM Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase; }
+  .preview-title { margin-top: 5px; font-size: 15px; font-weight: 700; }
+  .preview-live { display: flex; align-items: center; gap: 6px; color: #8d9a90; font: 500 9px/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
+  .preview-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .preview-mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+  .preview-mini-stat { padding: 13px 10px; text-align: center; background: #101411; }
+  .preview-mini-value { color: var(--text); font: 500 18px/1 'DM Mono', monospace; }
+  .preview-mini-label { margin-top: 5px; color: #657067; font-size: 8px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+  .preview-rows { padding: 9px 14px 14px; }
+  .preview-row {
+    display: grid; grid-template-columns: 32px 1fr auto; gap: 11px; align-items: center;
+    padding: 11px 7px; border-bottom: 1px solid rgba(255,255,255,.045);
+    filter: blur(2.5px); opacity: .6; user-select: none;
+  }
+  .preview-row:last-child { border-bottom: 0; }
+  .preview-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #24442f, #17251b); }
+  .preview-lines span { display: block; height: 7px; border-radius: 5px; background: #2a302c; }
+  .preview-lines span:first-child { width: 42%; margin-bottom: 7px; background: #39433c; }
+  .preview-tags { display: flex; gap: 4px; }
+  .preview-tags i { width: 28px; height: 14px; border-radius: 4px; background: rgba(29,185,84,.16); border: 1px solid rgba(29,185,84,.18); }
+
+  .why-section { position: relative; z-index: 1; max-width: 1220px; margin: 0 auto; padding: 66px 32px 72px; }
+  .section-eyebrow { color: var(--green); font: 600 10px/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+  .section-title { margin: 12px auto 10px; font-family: 'Bebas Neue', sans-serif; font-size: clamp(38px, 5vw, 58px); letter-spacing: 2px; line-height: 1; text-align: center; }
+  .section-subtitle { max-width: 620px; margin: 0 auto 34px; text-align: center; color: var(--muted); line-height: 1.7; font-size: 14px; }
+  .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .why-card { min-height: 220px; padding: 27px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .why-icon { width: 40px; height: 40px; margin-bottom: 28px; display: grid; place-items: center; border: 1px solid rgba(29,185,84,.3); border-radius: 8px; color: var(--green); background: rgba(29,185,84,.08); font: 500 17px/1 'DM Mono', monospace; }
+  .why-card h3 { margin-bottom: 10px; font-size: 16px; }
+  .why-card p { color: var(--muted); font-size: 13px; line-height: 1.65; }
+  .referral-proof { margin-top: 18px; color: var(--green); font: 600 10px/1.4 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .7px; }
+
+  .welcome-cta { position: relative; z-index: 1; margin: 0 32px 64px; padding: 40px; border: 1px solid rgba(29,185,84,.24); border-radius: 15px; background: linear-gradient(115deg, rgba(29,185,84,.15), rgba(29,185,84,.035)); display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+  .welcome-cta h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(30px, 4vw, 48px); letter-spacing: 1.5px; line-height: 1; }
+  .welcome-cta p { margin-top: 7px; color: #91a096; font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .welcome-hero { grid-template-columns: 1fr; padding-top: 58px; }
+    .directory-preview { transform: none; }
+    .why-grid { grid-template-columns: 1fr; }
+    .welcome-cta { align-items: flex-start; flex-direction: column; }
+  }
+  @media (max-width: 600px) {
+    #panel-welcome { margin: -20px -16px 0; }
+    .welcome-hero, .why-section { padding-left: 20px; padding-right: 20px; }
+    .welcome-title { font-size: 50px; }
+    .preview-mini-stats { grid-template-columns: repeat(2, 1fr); }
+    .welcome-cta { margin-left: 16px; margin-right: 16px; padding: 28px; }
   }
 
-  /* Blurred preview strip at bottom */
-  .welcome-preview-strip {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 160px; overflow: hidden;
-    pointer-events: none;
-    display: flex; gap: 12px; padding: 0 32px;
-    align-items: flex-start;
-    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.3) 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.3) 100%);
-    filter: blur(3px) saturate(0.4);
-    opacity: 0.5;
+  /* ── LICENSED-COVERAGE MAP (tile-grid fallback) ── */
+  .map-card { position: relative; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow-x: auto; }
+  .map-legend { display: flex; justify-content: center; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0 0 22px; color: #9aa19c; font-size: 11px; }
+  .map-legend-item { display: inline-flex; align-items: center; gap: 7px; }
+  .map-swatch { width: 18px; height: 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 3px; }
+  .bucket-0 { background: #252a27; }
+  .bucket-1 { background: #184729; }
+  .bucket-2 { background: #16783a; }
+  .bucket-3 { background: #1db954; }
+  .state-tile-map {
+    min-width: 760px; width: 100%; max-width: 980px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(11, minmax(52px, 1fr));
+    grid-template-rows: repeat(9, 58px); gap: 7px;
+    position: relative;
   }
-  .preview-card {
-    flex-shrink: 0; width: 240px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px;
-    display: flex; align-items: center; gap: 10px;
+  .map-tile {
+    border: 1px solid rgba(255,255,255,.1); border-radius: 7px;
+    color: #e7e9e7; cursor: pointer; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif; transition: transform .15s, border-color .15s, filter .15s;
   }
-  .preview-card-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--green-dark), #0a3d20);
-    flex-shrink: 0;
+  .map-tile:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.35); filter: brightness(1.15); z-index: 2; }
+  .map-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; z-index: 3; }
+  .map-tile-code { font: 700 12px/1 'DM Mono', monospace; letter-spacing: .5px; }
+  .map-tile-count { margin-top: 5px; color: rgba(255,255,255,.72); font: 500 9px/1 'DM Mono', monospace; }
+  .map-tooltip {
+    position: absolute; z-index: 10; display: none; pointer-events: none;
+    max-width: 220px; padding: 9px 11px; border: 1px solid rgba(29,185,84,.35);
+    border-radius: 6px; color: var(--text); background: #090c0a;
+    box-shadow: 0 8px 26px rgba(0,0,0,.45); font-size: 11px; line-height: 1.4;
   }
-  .preview-card-line-a { height: 10px; background: #2a2a2a; border-radius: 4px; width: 100px; margin-bottom: 6px; }
-  .preview-card-line-b { height: 8px; background: #1e1e1e; border-radius: 4px; width: 70px; }
+  .map-tooltip.visible { display: block; }
+  .map-caption { margin-top: 20px; text-align: center; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .map-caption strong { color: #cfd5d0; }
+  @media (max-width: 600px) { .map-card { padding: 16px 10px; } }
+
+  /* ── PRICING ── */
+  .public-panel-wrap { max-width: 1180px; margin: 0 auto; padding: 28px 0 48px; }
+  .public-panel-head { text-align: center; margin-bottom: 30px; }
+  .public-panel-head h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(42px, 6vw, 64px); letter-spacing: 2px; line-height: 1; }
+  .public-panel-head p { max-width: 650px; margin: 12px auto 0; color: var(--muted); line-height: 1.65; font-size: 14px; }
+  .pricing-toggle-wrap { display: flex; justify-content: center; margin: 24px 0; }
+  .pricing-toggle { display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: #bbb; font-size: 12px; cursor: pointer; }
+  .pricing-toggle input { accent-color: var(--green); }
+  .pricing-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+  .pricing-table { width: 100%; min-width: 760px; border-collapse: collapse; }
+  .pricing-table th, .pricing-table td { padding: 17px 18px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
+  .pricing-table th:first-child, .pricing-table td:first-child { text-align: left; width: 38%; }
+  .pricing-table th:last-child, .pricing-table td:last-child { border-right: 0; }
+  .pricing-table tbody tr:last-child td { border-bottom: 0; }
+  .pricing-table thead th { padding-top: 24px; background: #151715; }
+  .pricing-plan-name { font-family: 'Bebas Neue', sans-serif; font-size: 27px; letter-spacing: 1.5px; }
+  .pricing-plan-price { margin-top: 6px; color: var(--green); font: 500 13px/1.4 'DM Mono', monospace; }
+  .pricing-feature { color: #c9c9c9; font-size: 13px; line-height: 1.45; }
+  .pricing-check { color: var(--green); font-size: 19px; font-weight: 800; }
+  .pricing-x { color: #5d645f; font-size: 18px; }
+  .pricing-all-prices { color: #bbb; font: 500 11px/1.55 'DM Mono', monospace; }
+  .pricing-cta { min-width: 132px; padding: 10px 14px; border: 1px solid var(--green); border-radius: 6px; background: var(--green); color: #071109; font: 800 10px/1 'DM Sans', sans-serif; letter-spacing: 1px; cursor: pointer; }
+  .pricing-cta:hover { background: #25d864; }
+  .pricing-cta.secondary { background: transparent; color: var(--green); }
+  .pricing-footnote { margin-top: 16px; text-align: center; color: #646b66; font-size: 11px; line-height: 1.6; }
 
   /* ── FILTERS ── */
   .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: center; }
@@ -798,65 +855,74 @@
   </div>
 </header>
 
-<!-- ── TABS (hidden when logged out) ── -->
-<div class="tabs hidden" id="tab-bar">
-  <div class="tab active"  data-tab="directory"  onclick="switchTab('directory')">Directory</div>
-  <div class="tab"         data-tab="onboarding" id="tab-onboarding" onclick="switchTab('onboarding')">Join / Onboard</div>
-  <div class="tab"         data-tab="profile"    onclick="switchTab('profile')">My Profile</div>
-  <div class="tab"         data-tab="messages"   onclick="switchTab('messages')">Messages<span class="tab-unread-badge" id="messages-unread-badge">0</span></div>
+<!-- ── ALWAYS-VISIBLE PRIMARY NAV ── -->
+<div class="tabs" id="tab-bar" aria-label="Primary navigation">
+  <div class="tab active" data-tab="welcome" onclick="switchTab('welcome')">Home</div>
+  <div class="tab" data-tab="directory" onclick="switchTab('directory')">Directory</div>
+  <div class="tab" data-tab="map" onclick="switchTab('map')">Map</div>
+  <div class="tab" data-tab="messages" onclick="switchTab('messages')">Messages<span class="tab-unread-badge" id="messages-unread-badge">0</span></div>
+  <div class="tab" data-tab="pricing" onclick="switchTab('pricing')">Pricing</div>
+  <div class="tab" id="tab-join" onclick="handleJoinNavClick()">Join</div>
 </div>
 
 <div class="main">
 
-  <!-- WELCOME PANEL (shown when logged out) -->
+  <!-- WELCOME PANEL -->
   <div class="panel active" id="panel-welcome">
     <div class="welcome-wrap">
-      <div class="welcome-badge">Private Member Network</div>
-
-      <div class="welcome-title">
-        Insurance<br><span class="hl">Mavericks</span><br>Directory
-      </div>
-
-      <div class="welcome-desc">
-        The members-only network for independent insurance professionals.
-        Find referral partners, co-brokers, and licensed help
-        across state lines — all in one place.
-      </div>
-
-      <div class="welcome-stats">
-        <div class="welcome-stat">
-          <div class="welcome-stat-num" id="w-members">0</div>
-          <div class="welcome-stat-label">Members</div>
+      <section class="welcome-hero" aria-labelledby="welcome-heading">
+        <div class="welcome-copy">
+          <div class="welcome-badge">Private · Vetted · Built for referrals</div>
+          <h1 class="welcome-title" id="welcome-heading">Find your next <span class="hl">referral partner</span> in 60 seconds</h1>
+          <p class="welcome-desc">The private, vetted network for independent insurance professionals. Find licensed partners, niche expertise, and trusted coverage across state lines.</p>
+          <div class="welcome-stats" aria-label="Live network statistics">
+            <div class="welcome-stat"><span class="welcome-stat-num" id="w-members">0</span><span class="welcome-stat-label">Members</span></div>
+            <div class="welcome-stat"><span class="welcome-stat-num" id="w-states">0</span><span class="welcome-stat-label">States</span></div>
+            <div class="welcome-stat"><span class="welcome-stat-num" id="w-lobs">0</span><span class="welcome-stat-label">Lines</span></div>
+            <div class="welcome-stat"><span class="welcome-stat-num" id="w-specs">0</span><span class="welcome-stat-label">Niches</span></div>
+          </div>
+          <div class="welcome-actions">
+            <button class="btn-primary" onclick="handleJoinNavClick()">JOIN THE NETWORK</button>
+            <button class="btn-outline" onclick="switchTab('map')">EXPLORE THE MAP</button>
+          </div>
+          <div class="welcome-note">Insurance professionals only · Free membership available</div>
         </div>
-        <div class="welcome-stat">
-          <div class="welcome-stat-num" id="w-states">0</div>
-          <div class="welcome-stat-label">States</div>
-        </div>
-        <div class="welcome-stat">
-          <div class="welcome-stat-num" id="w-lobs">0</div>
-          <div class="welcome-stat-label">Lines of Business</div>
-        </div>
-        <div class="welcome-stat">
-          <div class="welcome-stat-num" id="w-specs">0</div>
-          <div class="welcome-stat-label">Specializations</div>
-        </div>
-      </div>
 
-      <div class="welcome-actions">
-        <button class="btn-primary" onclick="openAuthModal('login')">LOG IN</button>
-        <button class="btn-outline" onclick="openAuthModal('signup')">JOIN NOW</button>
-      </div>
+        <div class="directory-preview" aria-label="Anonymous live directory preview">
+          <div class="preview-head">
+            <div><div class="preview-kicker">Network snapshot</div><div class="preview-title">Live Directory</div></div>
+            <div class="preview-live">Live</div>
+          </div>
+          <div class="preview-mini-stats" aria-hidden="true">
+            <div class="preview-mini-stat"><div class="preview-mini-value" id="wp-members">0</div><div class="preview-mini-label">Members</div></div>
+            <div class="preview-mini-stat"><div class="preview-mini-value" id="wp-states">0</div><div class="preview-mini-label">States</div></div>
+            <div class="preview-mini-stat"><div class="preview-mini-value" id="wp-lobs">0</div><div class="preview-mini-label">Lines</div></div>
+            <div class="preview-mini-stat"><div class="preview-mini-value" id="wp-specs">0</div><div class="preview-mini-label">Niches</div></div>
+          </div>
+          <div class="preview-rows" aria-label="Member details hidden until sign in">
+            <div class="preview-row"><div class="preview-avatar"></div><div class="preview-lines"><span></span><span></span></div><div class="preview-tags"><i></i><i></i></div></div>
+            <div class="preview-row"><div class="preview-avatar"></div><div class="preview-lines"><span></span><span></span></div><div class="preview-tags"><i></i><i></i></div></div>
+            <div class="preview-row"><div class="preview-avatar"></div><div class="preview-lines"><span></span><span></span></div><div class="preview-tags"><i></i><i></i></div></div>
+            <div class="preview-row"><div class="preview-avatar"></div><div class="preview-lines"><span></span><span></span></div><div class="preview-tags"><i></i><i></i></div></div>
+          </div>
+        </div>
+      </section>
 
-      <div class="welcome-note">Members-only access &bull; Insurance professionals only</div>
+      <section class="why-section" aria-labelledby="why-heading">
+        <div class="section-eyebrow">Why Mavericks</div>
+        <h2 class="section-title" id="why-heading">A network built to move business</h2>
+        <p class="section-subtitle">Stop sending opportunities into the void. Find the right licensed professional, protect the relationship, and keep serving your client.</p>
+        <div class="why-grid">
+          <article class="why-card"><div class="why-icon" aria-hidden="true">↗</div><h3>Cross-State Referrals</h3><p>Filter the directory by licensed coverage and connect with a partner who can help when an opportunity crosses your state line.</p><div class="referral-proof">Members report 3+ inbound referrals a month</div></article>
+          <article class="why-card"><div class="why-icon" aria-hidden="true">◎</div><h3>Niche Specialists</h3><p>Search by line of business and specialization to find professionals equipped for the risk in front of you.</p></article>
+          <article class="why-card"><div class="why-icon" aria-hidden="true">✓</div><h3>Vetted Members</h3><p>Build relationships inside a private insurance community. Every tier can message Pro members; Pro profiles can receive new conversations from the network.</p></article>
+        </div>
+      </section>
 
-      <!-- Blurred teaser cards -->
-      <div class="welcome-preview-strip">
-        <div class="preview-card"><div class="preview-card-avatar"></div><div><div class="preview-card-line-a"></div><div class="preview-card-line-b"></div></div></div>
-        <div class="preview-card"><div class="preview-card-avatar"></div><div><div class="preview-card-line-a"></div><div class="preview-card-line-b"></div></div></div>
-        <div class="preview-card"><div class="preview-card-avatar"></div><div><div class="preview-card-line-a"></div><div class="preview-card-line-b"></div></div></div>
-        <div class="preview-card"><div class="preview-card-avatar"></div><div><div class="preview-card-line-a"></div><div class="preview-card-line-b"></div></div></div>
-        <div class="preview-card"><div class="preview-card-avatar"></div><div><div class="preview-card-line-a"></div><div class="preview-card-line-b"></div></div></div>
-      </div>
+      <section class="welcome-cta" aria-label="Join Insurance Mavericks">
+        <div><h2>Ready to make the network work for you?</h2><p>Create your profile, show where you are licensed, and become easier to find.</p></div>
+        <button class="btn-primary" onclick="handleJoinNavClick()">JOIN INSURANCE MAVERICKS</button>
+      </section>
     </div>
   </div>
 
@@ -1039,6 +1105,69 @@
     </div>
   </div>
 
+  <!-- MAP PANEL -->
+  <div class="panel" id="panel-map">
+    <div class="public-panel-wrap">
+      <div class="public-panel-head">
+        <div class="section-eyebrow">Licensed coverage</div>
+        <h1>Find a Maverick in every market</h1>
+        <p>Explore where members hold active licenses, then select a state to open the Directory with that state filter applied.</p>
+      </div>
+      <div class="map-legend" aria-label="Licensed member count legend">
+        <span class="map-legend-item"><i class="map-swatch bucket-0"></i>0 members</span>
+        <span class="map-legend-item"><i class="map-swatch bucket-1"></i>1–2 members</span>
+        <span class="map-legend-item"><i class="map-swatch bucket-2"></i>3–5 members</span>
+        <span class="map-legend-item"><i class="map-swatch bucket-3"></i>6+ members</span>
+      </div>
+      <div class="map-card">
+        <!-- State tile-grid fallback selected per PLAN.md D5: no external SVG boundary geometry is embedded, so no third-party dataset or license text applies. -->
+        <div class="state-tile-map" id="state-tile-map" aria-label="United States licensed member coverage by state"></div>
+        <div class="map-tooltip" id="map-tooltip" role="tooltip"></div>
+        <p class="map-caption"><strong>Counts reflect licensed-state coverage, not headquarters location.</strong> A member licensed in multiple states is counted in each of those states. Select any state — including a zero-count state — to filter the Directory.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING PANEL -->
+  <div class="panel" id="panel-pricing">
+    <div class="public-panel-wrap">
+      <div class="public-panel-head">
+        <div class="section-eyebrow">Simple membership</div>
+        <h1>Choose how the network works for you</h1>
+        <p>Every member is listed and can message Pro members. Upgrade to show your contact link or let the entire network start conversations with you.</p>
+      </div>
+      <div class="pricing-toggle-wrap">
+        <label class="pricing-toggle"><input type="checkbox" id="pricing-annual-toggle" onchange="renderPricing()"> Bill annually</label>
+      </div>
+      <div class="pricing-table-wrap">
+        <table class="pricing-table">
+          <thead>
+            <tr>
+              <th scope="col">Membership benefit</th>
+              <th scope="col"><div class="pricing-plan-name">Free</div><div class="pricing-plan-price">$0</div></th>
+              <th scope="col"><div class="pricing-plan-name">Basic</div><div class="pricing-plan-price" id="pricing-basic-head"></div></th>
+              <th scope="col"><div class="pricing-plan-name">Pro</div><div class="pricing-plan-price" id="pricing-pro-head"></div></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="pricing-feature">Listed in the member directory</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">Your Facebook/contact link shown on your card</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">You can message any Pro member</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">Other members can start a conversation with you</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">Price</td><td class="pricing-all-prices">$0</td><td class="pricing-all-prices" id="pricing-basic-all"></td><td class="pricing-all-prices" id="pricing-pro-all"></td></tr>
+            <tr>
+              <td class="pricing-feature">Get started</td>
+              <td><button class="pricing-cta secondary" onclick="handleJoinNavClick()">JOIN FREE</button></td>
+              <td><button class="pricing-cta" id="pricing-basic-cta" onclick="startPricingCheckout('basic', getPricingInterval())">CHOOSE BASIC</button></td>
+              <td><button class="pricing-cta" id="pricing-pro-cta" onclick="startPricingCheckout('pro', getPricingInterval())">CHOOSE PRO</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="pricing-footnote">Paid memberships are processed securely through Stripe. Annual billing uses the published annual plan price.</p>
+    </div>
+  </div>
+
   <!-- MESSAGES PANEL (Pro members are messageable; anyone signed in can send/receive) -->
   <div class="panel" id="panel-messages">
     <div class="messages-layout">
@@ -1072,6 +1201,32 @@
 const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
 
 const STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"];
+const STATE_NAMES = {
+  AL:'Alabama', AK:'Alaska', AZ:'Arizona', AR:'Arkansas', CA:'California', CO:'Colorado',
+  CT:'Connecticut', DE:'Delaware', FL:'Florida', GA:'Georgia', HI:'Hawaii', ID:'Idaho',
+  IL:'Illinois', IN:'Indiana', IA:'Iowa', KS:'Kansas', KY:'Kentucky', LA:'Louisiana',
+  ME:'Maine', MD:'Maryland', MA:'Massachusetts', MI:'Michigan', MN:'Minnesota',
+  MS:'Mississippi', MO:'Missouri', MT:'Montana', NE:'Nebraska', NV:'Nevada',
+  NH:'New Hampshire', NJ:'New Jersey', NM:'New Mexico', NY:'New York',
+  NC:'North Carolina', ND:'North Dakota', OH:'Ohio', OK:'Oklahoma', OR:'Oregon',
+  PA:'Pennsylvania', RI:'Rhode Island', SC:'South Carolina', SD:'South Dakota',
+  TN:'Tennessee', TX:'Texas', UT:'Utah', VT:'Vermont', VA:'Virginia',
+  WA:'Washington', WV:'West Virginia', WI:'Wisconsin', WY:'Wyoming',
+  DC:'District of Columbia'
+};
+
+const STATE_TILE_LAYOUT = [
+  ['AK',1,1], ['ME',1,11],
+  ['WI',2,6], ['VT',2,10], ['NH',2,11],
+  ['WA',3,1], ['MT',3,2], ['ND',3,4], ['MN',3,5], ['IL',3,6], ['MI',3,7], ['NY',3,9], ['MA',3,11],
+  ['ID',4,1], ['WY',4,2], ['SD',4,4], ['IA',4,5], ['IN',4,6], ['OH',4,7], ['PA',4,8], ['NJ',4,9], ['CT',4,10], ['RI',4,11],
+  ['OR',5,1], ['NV',5,2], ['NE',5,4], ['MO',5,5], ['KY',5,6], ['WV',5,7], ['VA',5,8], ['MD',5,9], ['DE',5,10],
+  ['CA',6,1], ['UT',6,2], ['CO',6,3], ['KS',6,4], ['AR',6,5], ['TN',6,6], ['NC',6,8], ['DC',6,9],
+  ['AZ',7,2], ['NM',7,3], ['OK',7,4], ['LA',7,5], ['MS',7,6], ['AL',7,7], ['SC',7,8],
+  ['HI',8,1], ['TX',8,4], ['GA',8,7],
+  ['FL',9,8]
+];
+
 const LOBS   = ["Commercial P&C","Workers Comp","General Liability","Commercial Auto","BOP","Cyber","E&O / D&O","Surety & Bonds","Personal Auto","Homeowners","Renters","Umbrella","Life Insurance","Disability","Group Benefits","Health","Medicare","Annuities"];
 const SPECS  = ["Contractors","Restaurants","Trucking","Healthcare","Real Estate","Construction","Retail","Hospitality","Technology","Nonprofits","Agriculture","Manufacturing","Professional Services","High Value Homes","High Net Worth","Small Business","Veteran-Owned Biz","Franchise"];
 
@@ -1079,6 +1234,7 @@ const SPECS  = ["Contractors","Restaurants","Trucking","Healthcare","Real Estate
 // `members` is a client-side cache of the directory, refreshed from
 // Supabase after sign-in and after any create/update/delete.
 let members         = [];
+let stateCoverageCounts = Object.fromEntries(STATES.map(code => [code, 0]));
 let currentSession   = null;  // Supabase auth session (or null)
 let currentProfile   = null;  // This user's own profile row (or null until they join)
 let selectedStates   = [];
@@ -1112,6 +1268,22 @@ async function refreshMembers() {
   catch (e) { console.error(e); members = []; }
 }
 
+async function refreshStateCoverage() {
+  if (!db.ready) return;
+  try {
+    const rows = await db.stats.getStateCoverage();
+    const nextCounts = Object.fromEntries(STATES.map(code => [code, 0]));
+    rows.forEach(row => {
+      if (Object.prototype.hasOwnProperty.call(nextCounts, row.state_code)) {
+        nextCounts[row.state_code] = Number(row.member_count) || 0;
+      }
+    });
+    stateCoverageCounts = nextCounts;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 async function refreshCurrentProfile() {
   if (!db.ready || !currentSession) { currentProfile = null; return; }
   try { currentProfile = await db.profiles.mine(); }
@@ -1130,11 +1302,16 @@ async function handleGoogleSignIn(response) {
     await refreshCurrentProfile();
     await maybeSelfHealWelcome();
     await refreshMembers();
+    await refreshStateCoverage();
+    populateFilters();
+    renderGrid();
+    renderMap();
     closeAuthModal();
     updateAuthUI();
     await pollMessages();
     showToast('Signed in with Google!');
-    switchTab('directory');
+    switchTab(readPendingCheckoutIntent() && !currentProfile ? 'onboarding' : 'directory');
+    await maybeResumeCheckout();
   } catch (e) {
     console.error(e);
     showToast('Google sign-in failed. Try again.');
@@ -1206,11 +1383,16 @@ async function doLogin() {
     await refreshCurrentProfile();
     await maybeSelfHealWelcome();
     await refreshMembers();
+    await refreshStateCoverage();
+    populateFilters();
+    renderGrid();
+    renderMap();
     closeAuthModal();
     updateAuthUI();
     await pollMessages();
     showToast('Welcome back!');
-    switchTab('directory');
+    switchTab(readPendingCheckoutIntent() && !currentProfile ? 'onboarding' : 'directory');
+    await maybeResumeCheckout();
   } catch (e) {
     showAuthError('login-error', e.message || 'Incorrect email or password.');
   }
@@ -1230,7 +1412,7 @@ async function doSignup() {
     closeAuthModal();
     updateAuthUI();
     showToast(currentSession ? 'Account created! Now complete your profile.' : 'Check your email to confirm your account.');
-    if (currentSession) switchTab('profile');
+    if (currentSession) switchTab(readPendingCheckoutIntent() ? 'onboarding' : 'profile');
   } catch (e) {
     showAuthError('signup-error', e.message || 'Could not create your account.');
   }
@@ -1245,19 +1427,18 @@ async function doLogout() {
   threadsCache = [];
   membershipPollToken += 1;
   window.stripeCheckout.clearExpectedPlan();
+  localStorage.removeItem('im_pending_checkout');
   updateUnreadBadge(0);
   updateAuthUI();
   // Return to welcome page
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-welcome').classList.add('active');
+  switchTab('welcome');
   showToast('Logged out.');
 }
 
 function handleLogoClick() {
   if(currentSession) switchTab('directory');
   else {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-welcome').classList.add('active');
+    switchTab('welcome');
   }
 }
 
@@ -1280,12 +1461,7 @@ function updateAuthUI() {
   document.getElementById('header-pill-members').style.display= loggedIn ? ''     : 'none';
   document.getElementById('header-pill-states').style.display = loggedIn ? ''     : 'none';
 
-  // Tab bar
-  document.getElementById('tab-bar').classList.toggle('hidden', !loggedIn);
-
-  // Join tab: only show if logged in but no profile yet
   const m = getCurrentMember();
-  document.getElementById('tab-onboarding').style.display = (loggedIn && !m) ? '' : 'none';
 
   if(loggedIn) {
     const name = m ? m.first + ' ' + m.last : (acct.email || '').split('@')[0];
@@ -1318,9 +1494,13 @@ async function updateWelcomeStats() {
     document.getElementById('w-states').textContent  = stats.states_count;
     document.getElementById('w-lobs').textContent    = stats.lobs_count;
     document.getElementById('w-specs').textContent   = stats.specs_count;
+    document.getElementById('wp-members').textContent = stats.members_count;
+    document.getElementById('wp-states').textContent  = stats.states_count;
+    document.getElementById('wp-lobs').textContent    = stats.lobs_count;
+    document.getElementById('wp-specs').textContent   = stats.specs_count;
   } catch (e) {
     console.error(e);
-    ['w-members', 'w-states', 'w-lobs', 'w-specs'].forEach((id) => {
+    ['w-members', 'w-states', 'w-lobs', 'w-specs', 'wp-members', 'wp-states', 'wp-lobs', 'wp-specs'].forEach((id) => {
       document.getElementById(id).textContent = '0';
     });
   }
@@ -1444,7 +1624,8 @@ async function saveProfile() {
     });
     await sendWelcomeAfterProfileSave();
     await refreshMembers();
-    populateFilters(); renderGrid(); updateAuthUI(); loadProfilePanel();
+    await refreshStateCoverage();
+    populateFilters(); renderGrid(); renderMap(); updateAuthUI(); loadProfilePanel();
     showToast('Profile saved!');
   } catch (e) {
     showToast(e.message || 'Could not save your profile.');
@@ -1482,7 +1663,9 @@ async function handlePhotoUpload(input) {
     const croppedFile = new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
     currentProfile = await db.profiles.uploadPhoto(croppedFile);
     await refreshMembers();
+    await refreshStateCoverage();
     loadProfilePanel();
+    renderMap();
     refreshHeaderAvatar(getCurrentAccount(), getCurrentMember());
     renderGrid();
     showToast('Photo updated!');
@@ -1500,10 +1683,10 @@ async function confirmDeleteAccount() {
     if (currentProfile) await db.profiles.deleteMine();
     currentProfile = null;
     await refreshMembers();
+    await refreshStateCoverage();
     updateAuthUI();
-    populateFilters(); renderGrid(); updateWelcomeStats();
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-welcome').classList.add('active');
+    populateFilters(); renderGrid(); renderMap(); updateWelcomeStats();
+    switchTab('welcome');
     showToast('Profile removed from the directory.');
   } catch (e) {
     showToast(e.message || 'Could not delete your profile.');
@@ -1516,6 +1699,29 @@ const MEMBERSHIP_PRICES = {
   pro:   { monthly: 20.82, annual: 136.98 }
 };
 
+function membershipPriceLabel(plan, interval) {
+  const price = interval === 'year' ? MEMBERSHIP_PRICES[plan].annual : MEMBERSHIP_PRICES[plan].monthly;
+  return `$${price.toFixed(2)}/${interval === 'year' ? 'yr' : 'mo'}`;
+}
+
+function membershipAllPricesLabel(plan) {
+  return `${membershipPriceLabel(plan, 'month')} · ${membershipPriceLabel(plan, 'year')}`;
+}
+
+function getPricingInterval() {
+  return document.getElementById('pricing-annual-toggle')?.checked ? 'year' : 'month';
+}
+
+function renderPricing() {
+  const interval = getPricingInterval();
+  ['basic', 'pro'].forEach(plan => {
+    const head = document.getElementById(`pricing-${plan}-head`);
+    const all = document.getElementById(`pricing-${plan}-all`);
+    if (head) head.textContent = membershipPriceLabel(plan, interval);
+    if (all) all.textContent = membershipAllPricesLabel(plan);
+  });
+}
+
 function renderMembershipOptions() {
   const opts = document.getElementById('membership-options');
   if (!opts) return;
@@ -1525,8 +1731,7 @@ function renderMembershipOptions() {
   const available = tier === 'pro' ? [] : tier === 'basic' ? ['pro'] : ['basic', 'pro'];
 
   const upgradeButtons = available.map((plan, index) => {
-    const price = annual ? MEMBERSHIP_PRICES[plan].annual : MEMBERSHIP_PRICES[plan].monthly;
-    const priceLabel = annual ? `$${price.toFixed(2)}/yr` : `$${price.toFixed(2)}/mo`;
+    const priceLabel = membershipPriceLabel(plan, interval);
     const planLabel = plan === 'pro' ? 'Pro' : 'Basic';
     return `<button class="membership-option-btn ${index > 0 ? 'secondary' : ''}" onclick="startMembershipCheckout('${plan}','${interval}')">Upgrade to ${planLabel} — ${priceLabel}</button>`;
   });
@@ -1564,8 +1769,10 @@ async function pollForExpectedTier(expectedPlan) {
     if (currentProfile?.tier === expectedPlan) {
       window.stripeCheckout.clearExpectedPlan();
       await refreshMembers();
+      await refreshStateCoverage();
       populateFilters();
       renderGrid();
+      renderMap();
       updateAuthUI();
       if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
       showToast('Membership activated!');
@@ -1579,10 +1786,60 @@ async function pollForExpectedTier(expectedPlan) {
   }
 }
 
+function setPendingCheckoutIntent(plan, interval) {
+  localStorage.setItem('im_pending_checkout', JSON.stringify({ plan, interval, ts: Date.now() }));
+}
+
+function readPendingCheckoutIntent() {
+  const raw = localStorage.getItem('im_pending_checkout');
+  if (!raw) return null;
+  try {
+    const intent = JSON.parse(raw);
+    if (!intent || Date.now() - intent.ts > 2 * 60 * 60 * 1000) {
+      localStorage.removeItem('im_pending_checkout');
+      return null;
+    }
+    return intent;
+  } catch {
+    localStorage.removeItem('im_pending_checkout');
+    return null;
+  }
+}
+
+let checkoutResumeInFlight = false;
+
+async function maybeResumeCheckout() {
+  if (checkoutResumeInFlight) return;
+  const intent = readPendingCheckoutIntent();
+  if (!intent || !getCurrentAccount() || !currentProfile) return;
+  checkoutResumeInFlight = true;
+  try {
+    const succeeded = await startMembershipCheckout(intent.plan, intent.interval);
+    if (succeeded) localStorage.removeItem('im_pending_checkout');
+  } finally {
+    checkoutResumeInFlight = false;
+  }
+}
+
+function startPricingCheckout(plan, interval) {
+  if (!getCurrentAccount()) {
+    setPendingCheckoutIntent(plan, interval);
+    openAuthModal('signup');
+    return;
+  }
+  if (!currentProfile) {
+    setPendingCheckoutIntent(plan, interval);
+    switchTab('onboarding');
+    showToast('Finish your profile, then checkout will continue automatically.');
+    return;
+  }
+  startMembershipCheckout(plan, interval);
+}
+
 async function startMembershipCheckout(plan, interval) {
-  if (!db.ready) { notConfiguredToast(); return; }
-  if (!currentProfile) { showToast('Set up your profile before upgrading.'); return; }
-  if (!currentSession) { openAuthModal('login'); return; }
+  if (!db.ready) { notConfiguredToast(); return false; }
+  if (!currentProfile) { showToast('Set up your profile before upgrading.'); return false; }
+  if (!currentSession) { openAuthModal('login'); return false; }
   try {
     const result = await window.stripeCheckout.startCheckout(
       plan,
@@ -1593,12 +1850,14 @@ async function startMembershipCheckout(plan, interval) {
       showToast('Plan updated. Activating your membership...');
       await pollForExpectedTier(plan);
     }
+    return true;
   } catch (error) {
     if (error.portalUrl) {
       window.location.href = error.portalUrl;
-      return;
+      return true;
     }
     showToast(error.message || 'Could not start checkout.');
+    return false;
   }
 }
 
@@ -1630,8 +1889,10 @@ async function handleCheckoutRedirect() {
   if (billingReturn) {
     await refreshCurrentProfile();
     await refreshMembers();
+    await refreshStateCoverage();
     populateFilters();
     renderGrid();
+    renderMap();
     if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
     showToast('Billing management closed.');
   }
@@ -1818,16 +2079,97 @@ function getCheckedIn(gridId) {
   return Array.from(document.querySelectorAll(`#${gridId} input:checked`)).map(c => c.value);
 }
 
+// ── MAP ──
+function mapBucket(count) {
+  if (count === 0) return 0;
+  if (count <= 2) return 1;
+  if (count <= 5) return 2;
+  return 3;
+}
+
+function renderMap() {
+  const rootElement = document.getElementById('state-tile-map');
+  if (!rootElement) return;
+  const counts = stateCoverageCounts;
+  rootElement.innerHTML = STATE_TILE_LAYOUT.map(([code, row, column]) => {
+    const count = counts[code] || 0;
+    const memberWord = count === 1 ? 'member' : 'members';
+    const label = `${STATE_NAMES[code]} — ${count} licensed ${memberWord}`;
+    return `<button type="button" class="map-tile bucket-${mapBucket(count)}" data-state="${code}" data-count="${count}" style="grid-row:${row};grid-column:${column}" aria-label="${label}"><span class="map-tile-code">${code}</span><span class="map-tile-count">${count}</span></button>`;
+  }).join('');
+}
+
+function activateMapState(code) {
+  const stateFilter = document.getElementById('filter-state');
+  stateFilter.value = code;
+  switchTab('directory');
+  renderGrid();
+}
+
+function showMapTooltip(tile, pointerEvent) {
+  const tooltip = document.getElementById('map-tooltip');
+  const mapCard = tile.closest('.map-card');
+  const count = Number(tile.dataset.count) || 0;
+  tooltip.textContent = `${STATE_NAMES[tile.dataset.state]} — ${count} licensed ${count === 1 ? 'member' : 'members'}`;
+  const cardRect = mapCard.getBoundingClientRect();
+  const tileRect = tile.getBoundingClientRect();
+  const left = pointerEvent
+    ? pointerEvent.clientX - cardRect.left + mapCard.scrollLeft + 12
+    : tileRect.left - cardRect.left + mapCard.scrollLeft + tileRect.width / 2;
+  const top = pointerEvent
+    ? pointerEvent.clientY - cardRect.top + mapCard.scrollTop + 12
+    : tileRect.top - cardRect.top + mapCard.scrollTop - 38;
+  tooltip.style.left = `${Math.max(8, left)}px`;
+  tooltip.style.top = `${Math.max(8, top)}px`;
+  tooltip.classList.add('visible');
+}
+
+function hideMapTooltip() {
+  document.getElementById('map-tooltip')?.classList.remove('visible');
+}
+
+function initMapInteractions() {
+  const mapRoot = document.getElementById('state-tile-map');
+  mapRoot.addEventListener('click', event => {
+    const tile = event.target.closest('[data-state]');
+    if (tile && mapRoot.contains(tile)) activateMapState(tile.dataset.state);
+  });
+  mapRoot.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const tile = event.target.closest('[data-state]');
+    if (!tile || !mapRoot.contains(tile)) return;
+    event.preventDefault();
+    activateMapState(tile.dataset.state);
+  });
+  mapRoot.addEventListener('pointerover', event => {
+    const tile = event.target.closest('[data-state]');
+    if (tile && mapRoot.contains(tile)) showMapTooltip(tile, event);
+  });
+  mapRoot.addEventListener('pointerout', event => {
+    const tile = event.target.closest('[data-state]');
+    if (!tile || tile.contains(event.relatedTarget)) return;
+    hideMapTooltip();
+  });
+  mapRoot.addEventListener('focusin', event => {
+    const tile = event.target.closest('[data-state]');
+    if (tile && mapRoot.contains(tile)) showMapTooltip(tile);
+  });
+  mapRoot.addEventListener('focusout', event => {
+    const tile = event.target.closest('[data-state]');
+    if (!tile || tile.contains(event.relatedTarget)) return;
+    hideMapTooltip();
+  });
+}
+
 // ── FILTERS & STATS ──
 function populateFilters() {
-  const stateSet = new Set(members.flatMap(m => m.states));
   const lobSet   = new Set(members.flatMap(m => m.lobs));
   const sf = document.getElementById('filter-state');
   const lf = document.getElementById('filter-lob');
   const sv = sf.value, lv = lf.value;
   sf.innerHTML = '<option value="">All States</option>';
   lf.innerHTML = '<option value="">All Lines of Business</option>';
-  [...stateSet].sort().forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
+  STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
   [...lobSet].sort().forEach(l  => { const o = document.createElement('option'); o.value = l; o.textContent = l; lf.appendChild(o); });
   sf.value = sv; lf.value = lv;
   updateStats();
@@ -1914,17 +2256,35 @@ function renderGrid() {
 }
 
 // ── TAB SWITCHING ──
+const PUBLIC_TABS = new Set(['welcome', 'map', 'pricing']);
+
 function switchTab(tab) {
-  const acct = getCurrentAccount();
-  if(!acct) { openAuthModal('login'); return; }
+  if (!PUBLIC_TABS.has(tab) && !getCurrentAccount()) {
+    openAuthModal('login');
+    return;
+  }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  ['welcome','directory','onboarding','profile','messages'].forEach(name => {
+  ['welcome','directory','map','onboarding','profile','messages','pricing'].forEach(name => {
     const panel = document.getElementById('panel-' + name);
-    if(panel) panel.classList.toggle('active', name === tab);
+    if (panel) panel.classList.toggle('active', name === tab);
   });
-  if(tab === 'profile')  loadProfilePanel();
-  if(tab === 'messages') renderMessagesTab();
+  if (tab === 'profile') loadProfilePanel();
+  if (tab === 'messages') renderMessagesTab();
+  if (tab === 'map') renderMap();
+  if (tab === 'pricing') renderPricing();
+}
+
+function handleJoinNavClick() {
+  if (!getCurrentAccount()) {
+    openAuthModal('signup');
+    return;
+  }
+  if (!currentProfile) {
+    switchTab('onboarding');
+    return;
+  }
+  switchTab('profile');
 }
 
 // ── ONBOARDING SUBMIT ──
@@ -1954,16 +2314,18 @@ async function submitForm() {
     });
     await sendWelcomeAfterProfileSave();
     await refreshMembers();
+    await refreshStateCoverage();
 
     document.querySelectorAll('#panel-onboarding input[type=text], #panel-onboarding textarea').forEach(el => el.value = '');
     document.querySelectorAll('#panel-onboarding input[type=checkbox]').forEach(cb => cb.checked = false);
     document.querySelectorAll('#state-grid .state-chip').forEach(c => c.classList.remove('selected'));
     selectedStates.length = 0;
 
-    populateFilters(); renderGrid(); updateWelcomeStats();
+    populateFilters(); renderGrid(); renderMap(); updateWelcomeStats();
     updateAuthUI();
     showToast('You have been added to the directory!');
     switchTab('profile');
+    await maybeResumeCheckout();
   } catch (e) {
     showToast(e.message || 'Could not save your profile.');
   }
@@ -1977,6 +2339,7 @@ function showToast(msg) {
 }
 
 // ── INIT ──
+initMapInteractions();
 initStateGrid('state-grid',    selectedStates);
 initStateGrid('p-state-grid',  pSelectedStates);
 initCheckboxGrid('lob-grid',   LOBS);
@@ -1993,19 +2356,22 @@ async function init() {
   await refreshCurrentProfile();
   await maybeSelfHealWelcome();
   await refreshMembers();
+  await refreshStateCoverage();
 
   populateFilters();
   renderGrid();
+  renderMap();
   await updateWelcomeStats();
   updateAuthUI();
   startMessagePolling();
   await pollMessages();
 
-  // If already logged in, go straight to directory
-  if(getCurrentAccount()) {
-    document.getElementById('panel-welcome').classList.remove('active');
-    document.getElementById('panel-directory').classList.add('active');
-    document.querySelector('[data-tab="directory"]').classList.add('active');
+  // Resume a valid cross-tab checkout intent after initial session restoration.
+  await maybeResumeCheckout();
+
+  // If already logged in, go straight to directory.
+  if (getCurrentAccount()) {
+    switchTab(readPendingCheckoutIntent() && !currentProfile ? 'onboarding' : 'directory');
     if (new URLSearchParams(window.location.search).get('tab') === 'messages') switchTab('messages');
   }
 
@@ -2022,12 +2388,15 @@ async function init() {
       await refreshCurrentProfile();
       await maybeSelfHealWelcome();
       await refreshMembers();
+      await refreshStateCoverage();
       populateFilters();
       renderGrid();
+      renderMap();
       updateAuthUI();
       if (!session) activeThreadOtherUserId = null;
       await pollMessages();
     }
+    await maybeResumeCheckout();
   });
 }
 
