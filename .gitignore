@@ -3,3 +3,4 @@ Thumbs.db
 node_modules/
 .netlify/
 .claude/worktrees/
+.claude/settings.local.json

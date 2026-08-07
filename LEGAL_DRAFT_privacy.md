@@ -45,6 +45,23 @@ they're tied to your account, not marketing). You can also manage
 Supabase's built-in account emails (confirmation, password reset)
 through the same provider.
 
+## Marketing and commercial email (US CAN-SPAM Act)
+
+Every email we currently send is transactional or relationship-based —
+tied to an action you took (signup, a message you received, a billing
+event) — not an advertisement. We do not currently send promotional or
+marketing email. If that changes, any commercial email we send will:
+identify Insurance Mavericks as the sender, use a subject line that
+accurately reflects the message content, include a working opt-out
+mechanism, honor opt-out requests within the legally required window,
+and include our valid postal mailing address, consistent with the
+CAN-SPAM Act. [DRAFT NOTE: our current transactional email templates do
+not include a physical postal mailing address. Add a real business
+mailing address to the email templates (`netlify/functions/lib/email.js`)
+before sending anything that could be characterized as marketing or
+promotional email, and before publishing this policy as final — this is
+a code change, not just a policy-text change.]
+
 ## Cookies and local storage
 
 We use your browser's local storage to remember a pending checkout
@@ -66,8 +83,22 @@ backups may retain deleted data, before publishing.]
 You can turn off message-notification emails at any time from your
 profile. You can update or remove your profile information at any time.
 [DRAFT NOTE: add a real contact method — support email or address —
-before publishing, and confirm any state-specific privacy rights
-(e.g. CCPA for California residents) that may apply to your business.]
+before publishing.]
+
+## Your US privacy rights
+
+Depending on where you live, state privacy law (for example California's
+CCPA/CPRA, or similar laws in other states) may give you additional
+rights over your personal information, which generally include the right
+to know what we collect, the right to request deletion, the right to
+correct inaccurate information, and the right to opt out of the "sale"
+or "sharing" of your personal information. We do not sell your personal
+information, and we do not share it with third parties for their own
+advertising purposes. [DRAFT NOTE: which specific state privacy laws
+apply depends on where your business operates and where your members are
+located — have counsel confirm which laws apply and add any
+state-specific procedures (e.g. a formal verifiable-request process)
+this policy needs before publishing.]
 
 ## Changes to this policy
 

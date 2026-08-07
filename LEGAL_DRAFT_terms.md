@@ -51,6 +51,27 @@ status. [DRAFT NOTE: consider adding a disclaimer that listing in the
 directory is not an endorsement or verification of any member's
 credentials, before publishing.]
 
+## Electronic communications
+
+By creating an account, you consent to receive electronic communications
+from us related to your account, billing, and messages you receive
+through the site, as described in our Privacy Policy. These are
+transactional communications, not marketing — we do not currently send
+promotional email. You can turn off message-notification emails at any
+time from your profile. Billing confirmation emails are tied to an
+active paid subscription; to stop them, cancel your subscription from
+your profile's billing management link before removing your profile.
+[DRAFT NOTE: deleting your directory profile (Delete Profile in your
+profile settings) while a paid subscription is still active is not a
+clean path today — it removes the profile record the billing system
+uses to identify you, without cancelling the underlying Stripe
+subscription first. This is a product/engineering gap, not just a
+policy-text question: either block profile deletion while a paid
+subscription is active, or automatically cancel the subscription as
+part of deletion, before publishing this policy as final. Until that's
+fixed, this section should tell members to cancel their subscription
+first, not make any claim about what happens if they don't.]
+
 ## Termination
 
 You may delete your profile at any time. We may suspend or terminate

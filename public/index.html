@@ -1288,6 +1288,10 @@
         <h2>Email</h2>
         <p>We use Resend to send account-related email: welcome messages, new message notifications (which you can turn off from your profile), and billing status confirmations (activation, plan changes, cancellation — these never include a dollar amount and cannot be turned off, since they're tied to your account, not marketing). You can also manage Supabase's built-in account emails (confirmation, password reset) through the same provider.</p>
 
+        <h2>Marketing and commercial email (US CAN-SPAM Act)</h2>
+        <p>Every email we currently send is transactional or relationship-based — tied to an action you took (signup, a message you received, a billing event) — not an advertisement. We do not currently send promotional or marketing email. If that changes, any commercial email we send will: identify Insurance Mavericks as the sender, use a subject line that accurately reflects the message content, include a working opt-out mechanism, honor opt-out requests within the legally required window, and include our valid postal mailing address, consistent with the CAN-SPAM Act.</p>
+        <div class="draft-note">[DRAFT NOTE: our current transactional email templates do not include a physical postal mailing address. Add a real business mailing address to the email templates (<code>netlify/functions/lib/email.js</code>) before sending anything that could be characterized as marketing or promotional email, and before publishing this policy as final — this is a code change, not just a policy-text change.]</div>
+
         <h2>Cookies and local storage</h2>
         <p>We use your browser's local storage to remember a pending checkout selection if you start upgrading before finishing your profile, so you don't have to re-select it after completing signup. This is cleared automatically after use or after 2 hours, and also on logout. We do not use third-party tracking or advertising cookies.</p>
 
@@ -1297,7 +1301,11 @@
 
         <h2>Your choices</h2>
         <p>You can turn off message-notification emails at any time from your profile. You can update or remove your profile information at any time.</p>
-        <div class="draft-note">[DRAFT NOTE: add a real contact method — support email or address — before publishing, and confirm any state-specific privacy rights (e.g. CCPA for California residents) that may apply to your business.]</div>
+        <div class="draft-note">[DRAFT NOTE: add a real contact method — support email or address — before publishing.]</div>
+
+        <h2>Your US privacy rights</h2>
+        <p>Depending on where you live, state privacy law (for example California's CCPA/CPRA, or similar laws in other states) may give you additional rights over your personal information, which generally include the right to know what we collect, the right to request deletion, the right to correct inaccurate information, and the right to opt out of the "sale" or "sharing" of your personal information. We do not sell your personal information, and we do not share it with third parties for their own advertising purposes.</p>
+        <div class="draft-note">[DRAFT NOTE: which specific state privacy laws apply depends on where your business operates and where your members are located — have counsel confirm which laws apply and add any state-specific procedures (e.g. a formal verifiable-request process) this policy needs before publishing.]</div>
 
         <h2>Changes to this policy</h2>
         <p>We may update this policy as the product changes.</p>
@@ -1337,6 +1345,10 @@
         <h2>Directory content</h2>
         <p>You're responsible for the accuracy of your own profile content (licensing claims, states, lines of business, bio, and any linked Facebook profile). We do not independently verify member licensing status.</p>
         <div class="draft-note">[DRAFT NOTE: consider adding a disclaimer that listing in the directory is not an endorsement or verification of any member's credentials, before publishing.]</div>
+
+        <h2>Electronic communications</h2>
+        <p>By creating an account, you consent to receive electronic communications from us related to your account, billing, and messages you receive through the site, as described in our Privacy Policy. These are transactional communications, not marketing — we do not currently send promotional email. You can turn off message-notification emails at any time from your profile. Billing confirmation emails are tied to an active paid subscription; to stop them, cancel your subscription from your profile's billing management link before removing your profile.</p>
+        <div class="draft-note">[DRAFT NOTE: deleting your directory profile (Delete Profile in your profile settings) while a paid subscription is still active is not a clean path today — it removes the profile record the billing system uses to identify you, without cancelling the underlying Stripe subscription first. This is a product/engineering gap, not just a policy-text question: either block profile deletion while a paid subscription is active, or automatically cancel the subscription as part of deletion, before publishing this policy as final. Until that's fixed, this section should tell members to cancel their subscription first, not make any claim about what happens if they don't.]</div>
 
         <h2>Termination</h2>
         <p>You may delete your profile at any time. We may suspend or terminate accounts that violate these terms.</p>

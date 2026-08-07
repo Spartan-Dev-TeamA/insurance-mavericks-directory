@@ -1,299 +1,178 @@
-# Insurance Mavericks — Legal pages, signup consent, button loading states (rev 3)
+# Insurance Mavericks — Sync legal panels with expanded compliance content (rev 2)
 
-## Changes across review rounds (superseded by the live spec below — kept as a short changelog, not a source of truth)
-Two adversarial rounds with Sol corrected: two wrong code citations
-(`loadEmailPreferences()` does NOT re-enable on error;
-`startPricingCheckout()` has no try/catch — `maybeResumeCheckout()` and
-`toggleEmailNotifications()` are the real examples); the signup markup
-being a `<div>` not a `<form>` (no native `required` enforcement);
-the modal/legal-link navigation contradiction (resolved: legal links
-close the modal, then switch panels — this does NOT lose typed field
-values, `closeAuthModal()` never clears inputs); Enter-key resubmission
-needing an explicit in-flight guard, not just `button.disabled`;
-checkbox state needing a reset point; draft-banner/DATE-placeholder
-scope; footer DOM placement; the `[DRAFT NOTE:` count (verified by grep:
-**4 in privacy + 7 in terms = 11 total**, not 7); and Google sign-in
-consent, which was ultimately dropped entirely and declared out of scope
-(`#google-btn-container` sits outside both auth-form tabs and
-`handleGoogleSignIn()` is a combined login-or-signup flow that can't
-distinguish new vs. returning users — gating it correctly needs a real
-UI restructure, and Google Sign-In is already an accepted,
-already-documented out-of-scope gap for this whole task). All of these
-are reflected directly in the S1-S4/D1-D4/Verification sections below;
-this changelog is historical context only, the sections below are
-authoritative.
+## Changes from rev 1 (per Sol's adversarial review)
+- Resolved a real contradiction: rev 1 said to add new CSS for the
+  `<code>` file-path reference while also requiring every unrelated line
+  outside the two `<article>` blocks stay byte-identical — a new CSS
+  rule would necessarily touch the stylesheet, which is outside the
+  articles. Resolved by NOT adding any new CSS: `.draft-note` is already
+  monospace (`DM Mono`), so a bare `<code>` tag with no extra styling
+  renders acceptably as-is — see D1 below.
+- Defined "verbatim"/"paragraph-by-paragraph" concretely: each source
+  paragraph that ends in a `[DRAFT NOTE: ...]` clause splits into a `<p>`
+  (the policy text) plus a sibling `<div class="draft-note">` (the
+  bracketed note) — matching the exact existing pattern already used for
+  every other note in both panels (e.g. "Data retention and deletion").
+  This is not a new decision, just stated explicitly with an example so
+  a builder doesn't second-guess it for the two new sections.
+- Verification's syntax-check step corrected: `node --check` doesn't
+  apply directly to an HTML file — the check is to extract the inline
+  `<script>` content to a temp `.js` file and check that, exactly as
+  done in the prior task's build (nothing in the script should have
+  changed at all, since this task only touches two `<article>` blocks —
+  the check is a regression guard, not an expected-change check).
+- Added explicit structural verification: confirm all three new sections
+  land inside the correct `<article>` (not accidentally outside it or in
+  the wrong panel), and that the footer's existing Privacy/Terms links
+  still open the correct, now-updated panels (they weren't touched, but
+  confirm nothing broke).
 
 ## Context
 
-Static site, `public/index.html` (inline CSS+JS), single-page-app panel
-pattern already established (`PUBLIC_TABS` set at line ~2294, `switchTab`
-panel-name array, e.g. Map/Pricing panels at lines 1144/1167). Draft legal
-content already written and reviewed by the boss:
-`LEGAL_DRAFT_privacy.md` and `LEGAL_DRAFT_terms.md` in the repo root —
-these are the SOURCE TEXT to render into new panels, not to be rewritten
-or improved, just converted from markdown into the site's existing
-HTML/CSS panel style (dark background, green accent, same typography as
-other panels). Both files start with a DRAFT/not-reviewed-by-counsel
-notice that MUST be preserved and rendered visibly at the top of each
-panel, not stripped out.
+The Privacy Policy and Terms of Service panels already exist and are live
+in `public/index.html` (`#panel-privacy` ~line 1268-1310,
+`#panel-terms` ~line 1312-1359), built and reviewed in a prior task. The
+user has now asked for the legal pages to address marketing-email
+compliance (CAN-SPAM), state privacy rights, and confirmed — after an
+explicit interview — that the scope is: **current site functionality
+only** (no TCPA/SMS language, no Meta Platform Terms, no LinkedIn API
+terms, since the site has none of those integrations today — it only has
+a plain-text Facebook profile URL field, not a Meta API integration) and
+**US only** (no CASL/PIPEDA). The user also explicitly acknowledged that
+no AI-drafted document can be certified "legally compliant" — this
+remains a draft requiring real attorney review, same as before.
 
-No site-wide footer exists yet (`.card-footer` is an unrelated
-member-card component class, not a page footer) — one needs to be added.
+The two source-of-truth markdown files,
+`LEGAL_DRAFT_privacy.md` and `LEGAL_DRAFT_terms.md`, have already been
+updated (by the boss directly, not Sol — this is drafting, not code) with
+the new content:
+- Privacy: a new "Marketing and commercial email (US CAN-SPAM Act)"
+  section after "Email", and the old "Your choices" section split into a
+  slimmer "Your choices" plus a new "Your US privacy rights" section.
+- Terms: a new "Electronic communications" section inserted before
+  "Termination".
 
-Existing loading-state pattern to replicate: `toggleEmailNotifications()`
-(`public/index.html:~1560-1578`) disables the control before the `await`,
-re-enables with the new state on success, and re-enables while reverting
-to the previous state on error — using a request-token pattern to guard
-against stale async responses racing a newer one. `maybeResumeCheckout()`
-(~1846-1856) is the codebase's existing plain `finally`-based re-enable
-example. For these 4 simple single-submit buttons a request-token isn't
-needed (only the toggle has rapid-fire re-triggering concerns); a plain
-disable/try/finally is sufficient here — don't over-copy the toggle's
-full pattern where it isn't needed. (`loadEmailPreferences()`, the
-sibling function that loads the toggle's initial state, deliberately
-does NOT re-enable on error — that's a different, intentional case, not
-a pattern to copy.)
+This task is ONLY to sync the two rendered HTML panels in
+`public/index.html` to match the updated markdown source — same
+conversion approach as the original panel build (verbatim content,
+`draft-note` callout treatment for `[DRAFT NOTE: ...]` bracketed text,
+no rewriting or "improving" the drafted language). No other part of the
+site changes.
 
-Button/handler locations (verified in current source):
-- `doLogin()` — line ~1410, button at line 845 (`LOG IN`, no `id`).
-- `doSignup()` — line ~1436, button at line 863 (`CREATE ACCOUNT`, no `id`).
-- `submitForm()` (onboarding save) — line ~2326, button at line 1045
-  (`SUBMIT TO DIRECTORY`, no `id`).
-- `saveProfile()` (profile edit save) — line ~1638, button at line 1137
-  (`SAVE CHANGES`, no `id`).
+## Scope
 
-## Agreed spec (from user interview)
+### 1. Privacy panel sync (`#panel-privacy`)
+Re-read `LEGAL_DRAFT_privacy.md` in full and reconcile the rendered
+`<article class="legal-article">` content in `public/index.html` against
+it section-by-section:
+- Insert a new `<h2>Marketing and commercial email (US CAN-SPAM Act)</h2>`
+  section between the existing "Email" and "Cookies and local storage"
+  `<h2>` sections. The source paragraph (`LEGAL_DRAFT_privacy.md` ~lines
+  50-62) ends in a `[DRAFT NOTE: ...]` clause — split it exactly like
+  every other note in these panels: policy-text sentences go in a `<p>`,
+  the bracketed note goes in a sibling `<div class="draft-note">`, e.g.:
+  ```html
+  <h2>Marketing and commercial email (US CAN-SPAM Act)</h2>
+  <p>[policy-text sentences up to, not including, the "[DRAFT NOTE:" clause]</p>
+  <div class="draft-note">[DRAFT NOTE: ...full bracketed text...]</div>
+  ```
+  That note contains one inline code reference,
+  `` `netlify/functions/lib/email.js` `` — render it as
+  `<code>netlify/functions/lib/email.js</code>` with NO new CSS; the
+  `.draft-note` div is already monospace (`DM Mono`), so a bare `<code>`
+  tag renders acceptably without any stylesheet change. Do not add a
+  `code` CSS rule anywhere — this task doesn't touch the `<style>` block
+  at all.
+- The existing "Your choices" `<h2>` section's `<p>` stays, but its
+  `draft-note` div changes — the old note mentioned "confirm any
+  state-specific privacy rights (e.g. CCPA...)"; the new markdown removed
+  that clause from "Your choices" and moved it into a new dedicated
+  section. Match the new markdown exactly (`LEGAL_DRAFT_privacy.md`
+  ~line 85): "Your choices" keeps only the "add a real contact method"
+  note.
+- Insert a new `<h2>Your US privacy rights</h2>` section immediately
+  after "Your choices", before "Changes to this policy" (source ~lines
+  88-98). Same split as above: policy-text `<p>`, then
+  `<div class="draft-note">` for the bracketed note.
+- Everything else in the privacy panel (What we collect, How we use it,
+  Payment information, Email, Cookies and local storage, Data retention
+  and deletion, Changes to this policy, Contact, the draft banner, the
+  date placeholder) is UNCHANGED — do not touch those sections, do not
+  reformat, do not reorder.
 
-S1. **Two new public panels**: `#panel-privacy`, `#panel-terms`, added to
-    `PUBLIC_TABS` and the `switchTab` panel-name array (same as
-    `map`/`pricing`). Content is the markdown from `LEGAL_DRAFT_privacy.md`
-    / `LEGAL_DRAFT_terms.md` converted to HTML matching the site's
-    existing panel styling — headings, paragraphs, and the `[DRAFT NOTE:
-    ...]` bracketed placeholders rendered as visibly distinct callouts
-    (not deleted, not silently normalized into regular body text — a
-    real person publishing this needs to see exactly what still needs
-    filling in). The top DRAFT notice becomes a persistent, clearly
-    styled banner (e.g. amber/warning-toned, not the site's green
-    success color) at the top of both panels.
-S2. **Site footer** (new — none currently exists): small, unobtrusive,
-    visible on every panel (not just public ones), with links to Privacy
-    Policy and Terms of Service (`switchTab('privacy')` /
-    `switchTab('terms')` — both are in `PUBLIC_TABS` so this works
-    regardless of auth state). Keep it minimal — a thin bottom bar
-    consistent with the site's existing dark/green aesthetic, not a new
-    heavy component.
-S3. **Signup consent checkbox**: in the signup form (near the
-    `CREATE ACCOUNT` button, line ~863), add a checkbox: "I agree to the
-    [Privacy Policy] and [Terms of Service]", with the two bracketed
-    phrases as clickable link elements. Since the auth modal is a
-    fixed full-screen overlay and `switchTab()` only changes panel
-    visibility underneath it, clicking either link (a) closes the auth
-    modal via the same path the existing close control uses, then
-    (b) calls `switchTab('privacy')` / `switchTab('terms')`. This closes
-    the modal (necessary since it sits above the target panel at
-    `z-index: 300`) but does NOT lose any typed-in field values —
-    `closeAuthModal()` only clears the `open` class and error text, it
-    never touches input values. `doSignup()` must check the checkbox is
-    checked and show a clear inline error via the existing
-    `showAuthError()` mechanism (not just a toast) if not, before
-    attempting the network call — since the markup is
-    `<div class="auth-form">` not a real `<form>` element, there is no
-    native HTML `required`/submit-blocking behavior here; enforcement is
-    entirely in `doSignup()`'s JS. **Google sign-in is explicitly NOT
-    gated by this checkbox** — `#google-btn-container` (line 868) sits
-    outside both `#auth-form-login` and `#auth-form-signup`, shared
-    across tabs, and `handleGoogleSignIn()` (~line 1332) is a single
-    combined login-or-signup flow that can't distinguish a new account
-    from a returning member before completing — gating it correctly
-    would mean wrongly re-prompting existing members on every login, or
-    a real UI restructure; Google Sign-In is already a documented,
-    accepted, out-of-scope gap for this whole task (unconfigured,
-    `GOOGLE_CLIENT_ID` still a placeholder, not live in production). Do
-    not add any check to `handleGoogleSignIn()`. This is explicitly a
-    UX/consent affordance for password signup only, not a legal
-    enforcement mechanism — do not add any server-side enforcement of
-    this checkbox (out of scope, and the RPC layer has no concept of
-    consent state). The checkbox resets to unchecked every time the auth
-    modal is opened (wherever the existing open-modal function,
-    `openAuthModal()` at ~line 1371, runs), so a previous session's
-    checked state never carries into a new attempt.
-S4. **Button loading states** for the 4 buttons listed above: loading
-    begins only after each function's existing synchronous
-    validation/preflight checks pass (e.g. `submitForm()`'s early returns
-    at ~2327-2339, `saveProfile()`'s early returns through ~1650, the new
-    consent check in `doSignup()`) — a synchronous validation failure
-    must leave the button untouched, not flash a loading state. Once past
-    validation: disable the button, change its visible label to a
-    pending state (e.g. "Signing in…", reuse the existing `submit-btn`
-    class, just swap `disabled` + `textContent`), and set an in-flight
-    boolean flag scoped to that function (e.g. a module-level
-    `let loginInFlight = false;`) so that Enter-key submission — the
-    password fields call `doLogin()`/`doSignup()` directly on keydown,
-    not only via the button's `onclick`, per lines ~843/861 — is also
-    blocked while a request is outstanding, not just the button click.
-    Re-enable the button and clear the in-flight flag with the original
-    label in both the success path (implicitly, since success usually
-    navigates/closes the modal — but re-enable defensively anyway in case
-    it doesn't) and the catch/error path, via `try/finally` so it can't
-    be skipped by an unexpected throw — matching `maybeResumeCheckout()`'s
-    existing `finally`-based re-enable pattern (~1846-1856).
+### 2. Terms panel sync (`#panel-terms`)
+Re-read `LEGAL_DRAFT_terms.md` in full and insert a new
+`<h2>Electronic communications</h2>` section, converting its paragraph
+verbatim, positioned exactly where the markdown places it: immediately
+after "Directory content" and its `draft-note`, immediately before
+"Termination" — i.e. between the existing "Directory content" section
+and the existing "Termination" section. This section DOES have its own
+`[DRAFT NOTE:]` — split it the same way as every other noted section:
+policy-text sentences in a `<p>`, the bracketed note in a sibling
+`<div class="draft-note">`. (Historical note: an earlier draft of this
+section had no note; it was added after a review round found the
+original wording made an inaccurate claim about what happens to billing
+emails after profile deletion — always convert whatever the current
+`LEGAL_DRAFT_terms.md` actually contains, not what a prior version had.)
+Everything else in the terms panel is UNCHANGED — same instruction as
+above, do not touch, reformat, or reorder any other section.
 
 ## Design
 
-### D1. Panel content conversion
-Worker reads both `LEGAL_DRAFT_*.md` files and converts each into a
-`<div class="panel" id="panel-privacy">...</div>` /
-`#panel-terms` block. Reuse `public-panel-wrap`/`section-eyebrow` for the
-panel header only (matching Pricing, `#panel-pricing` ~line 1167+); the
-body content (multiple `h2` sections, paragraphs, an effective-date line)
-needs its own new, minimal CSS for readable article-style long-form text
-(reasonable heading/paragraph spacing) since no existing panel has this
-shape — don't force-fit the Pricing panel's card-grid styling onto prose.
-The rendered "draft banner" is the bold warning paragraph text from each
-source file's opening lines (the "This is a starter draft prepared for
-review, not final legal advice..." paragraph) rendered as a
-`<div class="draft-banner">` styled distinctly (amber/warning, not the
-site's green), placed as the first child of each panel's content, above
-the `<h1>` title. The leading HTML comment in each source file
-(`<!-- DRAFT CONTENT — NOT REVIEWED BY COUNSEL ... -->`) is a markdown
-comment only — it has no rendered HTML equivalent and is not part of the
-conversion. Both `[DRAFT NOTE: ...]` bracketed text AND
-`[DATE — fill in before publishing]` placeholders become the same
-callout treatment: block-level `<div class="draft-note">` when the
-source note is its own paragraph or spans a full sentence within one
-(e.g. Terms lines 61-64, 75-77), inline `<span class="draft-note">` only
-for short parenthetical-style notes embedded mid-sentence. Same minimal
-new CSS for both (dashed border/amber text) — worker's judgment on
-block-vs-inline per note, guided by the source markdown's own paragraph
-structure.
-
-### D2. Footer
-A new `<footer>` element (semantic HTML, not another `<div>`), placed
-once in the document immediately after `.main` and its panels close, and
-before the toast element and any `<script>` tags — so it sits in normal
-document flow (not fixed/sticky, not part of the modal's overlay stack)
-and is never duplicated per panel or touched by `switchTab()`. Contains the two links plus a copyright line
-(`© <current year> Insurance Mavericks` — a static year is fine, this is
-a starter footer not a dynamic one). Minimal new CSS matching existing
-dark/muted-text patterns already in the stylesheet (reuse
-`var(--muted)`-equivalent existing custom properties, don't invent new
-color tokens). Known, accepted limitation: while the auth modal is open
-(`z-index: 300`, fixed full-screen), the footer underneath is not
-visible — this is fine, the footer's own links aren't needed there since
-the signup checkbox has its own links (D3).
-
-### D3. Signup checkbox
-New checkbox input near the `CREATE ACCOUNT` button, inside
-`#auth-form-signup` only (not shared with the login tab, not near
-`#google-btn-container`). `doSignup()` gains an early check: if
-unchecked, show the existing `showAuthError('signup-error', ...)`
-inline error mechanism already used for other signup validation in that
-function (reuse it, don't add a second error-display mechanism) and
-return before touching the network. **`handleGoogleSignIn()` is NOT
-touched — no consent check added there, per S3.** The two link phrases
-inside the checkbox label are
-`<a href="#" onclick="closeAuthModal(); switchTab('privacy'); return false;">`
-style elements (real anchor tags for keyboard/screen-reader
-accessibility — focusable and activatable with Enter, matching native
-`<a>` keyboard behavior — with `return false`/`preventDefault()` to stop
-the `href="#"` from adding a history entry or jumping scroll position),
-calling `closeAuthModal()` (~line 1380) followed by `switchTab()`. This
-deliberately closes the modal and switches the visible panel — that is
-the intended behavior per S3, not a bug to avoid; typed field values
-survive since `closeAuthModal()` doesn't clear inputs. Checkbox
-`checked` state resets to `false` wherever `openAuthModal()` (~line
-1371) runs.
-
-### D4. Loading states
-Illustrative pattern per button — order matters, this is not just a
-disable/re-enable wrapper:
-```
-let loginInFlight = false;
-
-async function doLogin() {
-  if (loginInFlight) return;                      // 1. in-flight guard, first
-  const btn = /* the LOG IN button element */;
-  /* existing synchronous validation / preflight checks stay here,
-     UNCHANGED, and still `return` early without touching btn/inFlight
-     at all — a validation failure must never show a loading state */
-  if (!db.ready) { showAuthError(...); return; }
-  if (!email || !password) { showAuthError(...); return; }
-
-  loginInFlight = true;                            // 2. only after validation passes
-  const original = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Logging in…';
-  try {
-    /* existing async body */
-  } catch (e) {
-    /* existing error handling */
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
-    loginInFlight = false;                         // 3. always clears, even on throw
-  }
-}
-```
-Each of the 4 functions gets its own `<name>InFlight` boolean (not
-shared across functions) so one loading button doesn't block an
-unrelated one. Buttons currently have no `id` — worker adds one (or uses
-a scoped `querySelector` from the modal container) to reference them
-from JS; match existing ID-naming conventions already used elsewhere in
-the file (kebab-case, prefixed by context, e.g. `login-submit-btn`). Do
-not introduce a shared helper function for this — 4 call sites, each
-with slightly different existing try/catch bodies and validation, doesn't
-justify one.
+Use the exact same HTML patterns already present in these two panels:
+`<h2>` for section headings, `<p>` for body paragraphs, `<div class="draft-note">`
+for the bracketed note split out of each source paragraph (matching the
+existing pattern, e.g. "Data retention and deletion" already does this
+split). No new CSS, anywhere, for any reason — this task does not touch
+the `<style>` block. The one new element type is a bare
+`<code>netlify/functions/lib/email.js</code>` tag inside one
+`draft-note` div; it inherits the div's existing monospace styling with
+no additional rule needed.
 
 ## Verification
-- `node --check`-equivalent syntax validation of the inline script
-  (temp-extract and parse, matching the pattern used throughout this
-  project's prior route-loop builds).
-- Grep-based checks: `PUBLIC_TABS` includes exactly
-  `{welcome, map, pricing, privacy, terms}`; all 11 `[DRAFT NOTE:`
-  occurrences (4 in privacy, 7 in terms — verified by grep) and both
-  `[DATE` placeholders survive into the rendered panel HTML (count them,
-  don't just confirm "a marker exists somewhere"); every `##` heading
-  from both source files is present as a heading element in the
-  corresponding panel; footer links call `switchTab('privacy')` /
-  `switchTab('terms')`; `handleGoogleSignIn()` is unchanged (no consent
-  check added, per S3/D3).
-- Manual trace per button: confirm `doSignup()`'s checkbox gate runs
-  BEFORE any `db.ready`/network check (fail fast, no wasted request); confirm the
-  in-flight guard blocks a second Enter-key-triggered call while a
-  request is outstanding; confirm every early-return/validation-failure
-  path in `submitForm()` (~2327-2339) and `saveProfile()` (through
-  ~1650) leaves the button in its normal (never-disabled) state, and
-  that the 4 buttons' `finally` blocks can't leave a button permanently
-  disabled if an unexpected exception type is thrown.
-- Confirm the legal links are real `<a>` elements reachable and
-  activatable by keyboard alone (Tab + Enter), not `<span>`/`<div>` with
-  only a click handler.
-- Boss reads the full diff plus does a side-by-side read of the rendered
-  panel content against the two `LEGAL_DRAFT_*.md` source files to
-  confirm nothing was lost or altered in the HTML conversion, before
-  approving.
+- Semantic content comparison (not literal byte diff) between each new
+  section's rendered HTML and its markdown source: collapse markdown
+  soft line-wraps and HTML whitespace, strip the markdown backtick
+  delimiters around the code reference (the text itself must still
+  appear, now inside `<code>` tags), and confirm every sentence — both
+  the policy-text `<p>` and the bracketed `draft-note` — appears with
+  nothing added, removed, or paraphrased.
+- Confirm section ORDER matches the markdown exactly in both panels: the
+  two new privacy `<h2>` blocks land between Email/Cookies-and-local-storage
+  and between Your-choices/Changes-to-this-policy respectively; the new
+  terms `<h2>` block lands between Directory-content and Termination.
+  That's three new `<h2>` sections total (two in privacy, one in terms),
+  plus one modification to the existing "Your choices" `draft-note` text
+  (not an insertion).
+- Confirm all three new sections are children of the correct `<article
+  class="legal-article">` in the correct panel (`#panel-privacy` vs.
+  `#panel-terms`) — not accidentally outside the article or in the wrong
+  panel.
+- Confirm no other section of either panel changed and no other part of
+  `public/index.html` was touched (diff the full file against its
+  pre-edit state; every line outside the three new insertions and the
+  one "Your choices" note replacement should be byte-identical —
+  including the `<style>` block, which must have zero changes since no
+  new CSS is being added).
+- Confirm the footer's existing Privacy/Terms links still open the
+  correct, now-updated panels (unchanged code path, but verify nothing
+  broke).
+- Extract the inline `<script>` block to a temp `.js` file and syntax-check
+  it (it shouldn't have changed at all, since this task only touches the
+  two `<article>` blocks — this is a regression guard, not an
+  expected-change check).
 
 ## Build order
-B1 legal panel content conversion (D1) → B2 footer (D2) → B3 signup
-checkbox + doSignup gate (D3) → B4 button loading states, all 4 (D4) →
-B5 verification pass. No git operations. `PLAN.md` retained until boss
-deletes it. Do not delete or modify `LEGAL_DRAFT_privacy.md` /
-`LEGAL_DRAFT_terms.md` — they remain as source-of-truth reference files
-in the repo alongside the rendered HTML version.
+B1 privacy panel sync → B2 terms panel sync → B3 verification pass. No
+git operations. Do not modify `LEGAL_DRAFT_privacy.md` or
+`LEGAL_DRAFT_terms.md` — they are already correct and are the source of
+truth for this sync; only `public/index.html` changes.
 
 ## Boss verification gate
-- Draft banner and all draft notes/DATE placeholders are genuinely
-  visible in the rendered panels, not lost in conversion.
-- Footer present in normal document flow, links work, doesn't break
-  existing panel-switching behavior or the modal's overlay stacking.
-- Signup checkbox blocks password signup when unchecked, with a visible
-  inline error; Google sign-in is deliberately not gated (documented
-  out-of-scope, per S3); clicking the Privacy/Terms links from inside
-  the checkbox closes the modal and switches to the legal panel as
-  designed (not a bug — confirmed intended behavior, and typed field
-  values survive it).
-- All 4 buttons show a real loading state, always re-enable including on
-  error, and Enter-key resubmission is blocked while a request is
-  in-flight.
-- Nothing else in the existing 2000+ line file regressed (full diff read,
-  not just the new sections).
+- Every new sentence from both updated markdown files appears verbatim
+  in the corresponding rendered panel, in the correct position.
+- No regression to any other section of either panel, or to any other
+  part of the file.
+- The draft banner, draft-note styling, and overall visual pattern stay
+  consistent with the existing panels — the new sections should be
+  visually indistinguishable in style from the sections around them.
