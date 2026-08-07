@@ -199,6 +199,18 @@
   }
   .auth-error.show { display: block; }
 
+  .signup-consent {
+    display: flex; align-items: flex-start; gap: 9px;
+    margin-top: 16px; color: var(--muted);
+    font-size: 12px; line-height: 1.5; cursor: pointer;
+  }
+  .signup-consent input {
+    width: 15px; height: 15px; margin-top: 2px;
+    flex-shrink: 0; accent-color: var(--green);
+  }
+  .signup-consent a { color: var(--green); text-decoration: underline; text-underline-offset: 2px; }
+  .signup-consent a:hover { color: #22d660; }
+
   /* Auth divider (above Google button) */
   .auth-divider {
     display: flex; align-items: center; gap: 12px;
@@ -421,6 +433,36 @@
   .public-panel-head { text-align: center; margin-bottom: 30px; }
   .public-panel-head h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(42px, 6vw, 64px); letter-spacing: 2px; line-height: 1; }
   .public-panel-head p { max-width: 650px; margin: 12px auto 0; color: var(--muted); line-height: 1.65; font-size: 14px; }
+  .legal-panel-wrap { max-width: 900px; }
+  .legal-panel-wrap .public-panel-head { margin: 34px 0 36px; }
+  .draft-banner {
+    padding: 16px 18px; border: 1px solid rgba(245,197,66,.45);
+    border-left: 4px solid var(--accent); border-radius: 8px;
+    background: rgba(245,197,66,.09); color: #dfc66d;
+    font-size: 13px; line-height: 1.65;
+  }
+  .draft-banner strong { color: var(--accent); }
+  .legal-article {
+    padding: 34px 38px; border: 1px solid var(--border);
+    border-radius: 14px; background: var(--surface);
+    color: #c7c7c7; font-size: 14px; line-height: 1.75;
+  }
+  .legal-article h2 {
+    margin: 34px 0 10px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text); font-family: 'Bebas Neue', sans-serif;
+    font-size: 25px; line-height: 1.2; letter-spacing: 1.5px;
+  }
+  .legal-article h2:first-of-type { margin-top: 30px; }
+  .legal-article p { margin-bottom: 14px; }
+  .legal-effective-date { color: var(--muted); font: 500 12px/1.7 'DM Mono', monospace; }
+  .draft-note {
+    border: 1px dashed rgba(245,197,66,.5); border-radius: 7px;
+    background: rgba(245,197,66,.06); color: var(--accent);
+    font: 500 12px/1.65 'DM Mono', monospace;
+  }
+  div.draft-note { margin: 12px 0 18px; padding: 12px 14px; }
+  span.draft-note { display: inline; padding: 2px 5px; }
   .pricing-toggle-wrap { display: flex; justify-content: center; margin: 24px 0; }
   .pricing-toggle { display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: #bbb; font-size: 12px; cursor: pointer; }
   .pricing-toggle input { accent-color: var(--green); }
@@ -613,6 +655,20 @@
   }
   .submit-btn:hover  { background: #22d660; transform: translateY(-1px); }
   .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled, .submit-btn:disabled:hover {
+    background: var(--green-dark); cursor: wait; opacity: .72; transform: none;
+  }
+
+  /* ── SITE FOOTER ── */
+  .site-footer {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    flex-wrap: wrap; padding: 15px 32px;
+    border-top: 1px solid var(--border); color: var(--muted);
+    background: var(--surface); font-size: 11px;
+  }
+  .site-footer nav { display: flex; gap: 14px; }
+  .site-footer a { color: var(--muted); text-decoration: none; }
+  .site-footer a:hover { color: var(--green); }
 
   /* ── TOAST ── */
   .toast {
@@ -787,6 +843,8 @@
     .modal     { margin: 12px; padding: 24px; }
     .stat-pill { display: none; }
     .welcome-title { font-size: 52px; }
+    .legal-article { padding: 24px 20px; }
+    .site-footer { padding: 14px 16px; }
   }
 
   .email-pref-card {
@@ -842,7 +900,7 @@
         <label>Password</label>
         <input type="password" id="l-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
-      <button class="submit-btn" style="margin-top:20px;font-size:15px;" onclick="doLogin()">LOG IN</button>
+      <button class="submit-btn" id="login-submit-btn" style="margin-top:20px;font-size:15px;" onclick="doLogin()">LOG IN</button>
     </div>
 
     <!-- Sign Up -->
@@ -860,7 +918,11 @@
         <label>Confirm Password</label>
         <input type="password" id="s-password2" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doSignup()">
       </div>
-      <button class="submit-btn" style="margin-top:20px;font-size:15px;" onclick="doSignup()">CREATE ACCOUNT</button>
+      <label class="signup-consent">
+        <input type="checkbox" id="signup-consent">
+        <span>I agree to the <a href="#" onclick="closeAuthModal(); switchTab('privacy'); return false;">Privacy Policy</a> and <a href="#" onclick="closeAuthModal(); switchTab('terms'); return false;">Terms of Service</a></span>
+      </label>
+      <button class="submit-btn" id="signup-submit-btn" style="margin-top:20px;font-size:15px;" onclick="doSignup()">CREATE ACCOUNT</button>
     </div>
 
     <!-- Google Sign-In (shown when GOOGLE_CLIENT_ID is configured) -->
@@ -1042,7 +1104,7 @@
             </div>
           </div>
         </div>
-        <button class="submit-btn" onclick="submitForm()">SUBMIT TO DIRECTORY</button>
+        <button class="submit-btn" id="onboarding-submit-btn" onclick="submitForm()">SUBMIT TO DIRECTORY</button>
       </div>
     </div>
   </div>
@@ -1134,7 +1196,7 @@
               </div>
             </div>
           </div>
-          <button class="submit-btn" onclick="saveProfile()">SAVE CHANGES</button>
+          <button class="submit-btn" id="profile-save-btn" onclick="saveProfile()">SAVE CHANGES</button>
         </div>
       </div>
     </div>
@@ -1203,6 +1265,99 @@
     </div>
   </div>
 
+  <!-- PRIVACY POLICY PANEL -->
+  <div class="panel" id="panel-privacy">
+    <div class="public-panel-wrap legal-panel-wrap">
+      <div class="draft-banner"><strong>This is a starter draft prepared for review, not final legal advice.</strong> It has not been reviewed by an attorney and should not be relied on as legally sufficient until it has been. Text below reflects what Insurance Mavericks actually does as of this draft's writing; update it if the product changes before publishing.</div>
+      <div class="public-panel-head">
+        <div class="section-eyebrow">Legal — draft</div>
+        <h1>Privacy Policy — DRAFT</h1>
+      </div>
+      <article class="legal-article">
+        <p class="legal-effective-date">Last updated: <span class="draft-note">[DATE — fill in before publishing]</span></p>
+
+        <h2>What we collect</h2>
+        <p>When you create a member profile, we collect: your first and last name, agency/company name, home state, licensed states, lines of business, specializations, a short bio, an optional Facebook profile URL, and an optional profile photo. Your email address and password (or Google account, if you sign in that way) are collected at signup and managed by our authentication provider, Supabase.</p>
+
+        <h2>How we use it</h2>
+        <p>Your profile information is shown to other signed-in members in the directory so they can find licensed referral partners. Basic and Pro members' profiles additionally show a contact link to other members; Pro members can receive direct messages from other members through the site's built-in messaging feature. We do not sell your information to third parties.</p>
+
+        <h2>Payment information</h2>
+        <p>If you subscribe to a paid membership tier, your payment is processed directly by Stripe. We do not receive or store your full card number — Stripe handles that. We do store your subscription tier and Stripe customer/subscription identifiers so we can keep your account status in sync with your billing status.</p>
+
+        <h2>Email</h2>
+        <p>We use Resend to send account-related email: welcome messages, new message notifications (which you can turn off from your profile), and billing status confirmations (activation, plan changes, cancellation — these never include a dollar amount and cannot be turned off, since they're tied to your account, not marketing). You can also manage Supabase's built-in account emails (confirmation, password reset) through the same provider.</p>
+
+        <h2>Cookies and local storage</h2>
+        <p>We use your browser's local storage to remember a pending checkout selection if you start upgrading before finishing your profile, so you don't have to re-select it after completing signup. This is cleared automatically after use or after 2 hours, and also on logout. We do not use third-party tracking or advertising cookies.</p>
+
+        <h2>Data retention and deletion</h2>
+        <p>You can delete your own profile at any time from your profile settings. This removes your profile from the directory immediately.</p>
+        <div class="draft-note">[DRAFT NOTE: confirm and describe here what happens to your underlying authentication account and any message history after profile deletion, and how long backups may retain deleted data, before publishing.]</div>
+
+        <h2>Your choices</h2>
+        <p>You can turn off message-notification emails at any time from your profile. You can update or remove your profile information at any time.</p>
+        <div class="draft-note">[DRAFT NOTE: add a real contact method — support email or address — before publishing, and confirm any state-specific privacy rights (e.g. CCPA for California residents) that may apply to your business.]</div>
+
+        <h2>Changes to this policy</h2>
+        <p>We may update this policy as the product changes.</p>
+        <div class="draft-note">[DRAFT NOTE: describe how you'll notify members of material changes before publishing.]</div>
+
+        <h2>Contact</h2>
+        <div class="draft-note">[DRAFT NOTE: add a real contact email/address before publishing.]</div>
+      </article>
+    </div>
+  </div>
+
+  <!-- TERMS OF SERVICE PANEL -->
+  <div class="panel" id="panel-terms">
+    <div class="public-panel-wrap legal-panel-wrap">
+      <div class="draft-banner"><strong>This is a starter draft prepared for review, not final legal advice.</strong> It has not been reviewed by an attorney and should not be relied on as legally sufficient until it has been.</div>
+      <div class="public-panel-head">
+        <div class="section-eyebrow">Legal — draft</div>
+        <h1>Terms of Service — DRAFT</h1>
+      </div>
+      <article class="legal-article">
+        <p class="legal-effective-date">Last updated: <span class="draft-note">[DATE — fill in before publishing]</span></p>
+
+        <h2>Who this is for</h2>
+        <p>Insurance Mavericks is a members-only directory and referral network for independent insurance professionals. By creating an account, you represent that you are an insurance professional using this site for that purpose.</p>
+        <div class="draft-note">[DRAFT NOTE: consider whether you want to require license verification or a specific attestation at signup before publishing — currently the site does not verify licensing status.]</div>
+
+        <h2>Your account</h2>
+        <p>You're responsible for keeping your login credentials secure and for the accuracy of the information in your profile. You may not create an account on behalf of someone else without their permission, or impersonate another person or business.</p>
+
+        <h2>Membership tiers and billing</h2>
+        <p>Free membership lists your profile in the directory. Paid tiers (Basic, Pro) unlock additional visibility and messaging features as described on the Pricing page at the time of your purchase. Subscriptions are billed in advance on a monthly or annual basis through Stripe and renew automatically until cancelled. You can cancel at any time from your profile's billing management link; cancellation takes effect at the end of your current billing period.</p>
+        <div class="draft-note">[DRAFT NOTE: confirm your actual refund policy, if any, before publishing — none is currently offered by default.]</div>
+
+        <h2>Messaging and conduct</h2>
+        <p>The messaging feature is for professional referral and networking purposes. You agree not to use it to send unsolicited advertising, spam, harassment, or unlawful content. We may remove content or suspend accounts that violate this.</p>
+
+        <h2>Directory content</h2>
+        <p>You're responsible for the accuracy of your own profile content (licensing claims, states, lines of business, bio, and any linked Facebook profile). We do not independently verify member licensing status.</p>
+        <div class="draft-note">[DRAFT NOTE: consider adding a disclaimer that listing in the directory is not an endorsement or verification of any member's credentials, before publishing.]</div>
+
+        <h2>Termination</h2>
+        <p>You may delete your profile at any time. We may suspend or terminate accounts that violate these terms.</p>
+
+        <h2>Disclaimer and limitation of liability</h2>
+        <p>The service is provided "as is."</p>
+        <div class="draft-note">[DRAFT NOTE: this section needs real legal drafting before publishing — standard disclaimer and limitation- of-liability language should be added by counsel, tailored to your business and jurisdiction.]</div>
+
+        <h2>Changes to these terms</h2>
+        <p>We may update these terms as the product changes.</p>
+        <div class="draft-note">[DRAFT NOTE: describe how you'll notify members of material changes before publishing.]</div>
+
+        <h2>Contact</h2>
+        <div class="draft-note">[DRAFT NOTE: add a real contact email/address before publishing.]</div>
+
+        <h2>Governing law</h2>
+        <div class="draft-note">[DRAFT NOTE: specify governing state/jurisdiction before publishing.]</div>
+      </article>
+    </div>
+  </div>
+
   <!-- MESSAGES PANEL (Pro members are messageable; anyone signed in can send/receive) -->
   <div class="panel" id="panel-messages">
     <div class="messages-layout">
@@ -1212,6 +1367,14 @@
   </div>
 
 </div>
+
+<footer class="site-footer">
+  <p>© 2026 Insurance Mavericks</p>
+  <nav aria-label="Legal">
+    <a href="#" onclick="switchTab('privacy'); return false;">Privacy Policy</a>
+    <a href="#" onclick="switchTab('terms'); return false;">Terms of Service</a>
+  </nav>
+</footer>
 
 <div class="toast" id="toast"></div>
 
@@ -1276,6 +1439,10 @@ let selectedStates   = [];
 let pSelectedStates  = [];
 let emailPrefsRequestToken = 0;
 let welcomeSelfHealAttempted = false;
+let loginInFlight = false;
+let signupInFlight = false;
+let profileSaveInFlight = false;
+let onboardingSubmitInFlight = false;
 
 function notConfiguredToast() {
   showToast('Backend not configured yet — see SUPABASE_SETUP.md.');
@@ -1369,6 +1536,7 @@ window.addEventListener('load', () => setTimeout(initGoogle, 300));
 
 // ── AUTH MODAL ──
 function openAuthModal(tab) {
+  document.getElementById('signup-consent').checked = false;
   document.getElementById('modal-overlay').classList.add('open');
   switchAuthTab(tab || 'login');
   setTimeout(() => {
@@ -1408,10 +1576,17 @@ function showAuthError(id, msg) {
 
 // ── AUTH ACTIONS ──
 async function doLogin() {
+  if (loginInFlight) return;
   if (!db.ready) { showAuthError('login-error', 'Backend not configured yet — see SUPABASE_SETUP.md.'); return; }
   const email    = document.getElementById('l-email').value.trim().toLowerCase();
   const password = document.getElementById('l-password').value;
   if(!email || !password) { showAuthError('login-error', 'Please enter your email and password.'); return; }
+
+  const btn = document.getElementById('login-submit-btn');
+  const original = btn.textContent;
+  loginInFlight = true;
+  btn.disabled = true;
+  btn.textContent = 'Logging in…';
   try {
     welcomeSelfHealAttempted = false;
     currentSession = await db.auth.signInWithPassword(email, password);
@@ -1430,10 +1605,19 @@ async function doLogin() {
     await maybeResumeCheckout();
   } catch (e) {
     showAuthError('login-error', e.message || 'Incorrect email or password.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+    loginInFlight = false;
   }
 }
 
 async function doSignup() {
+  if (signupInFlight) return;
+  if (!document.getElementById('signup-consent').checked) {
+    showAuthError('signup-error', 'You must agree to the Privacy Policy and Terms of Service to create an account.');
+    return;
+  }
   if (!db.ready) { showAuthError('signup-error', 'Backend not configured yet — see SUPABASE_SETUP.md.'); return; }
   const email    = document.getElementById('s-email').value.trim().toLowerCase();
   const password = document.getElementById('s-password').value;
@@ -1441,6 +1625,12 @@ async function doSignup() {
   if(!email || !password)  { showAuthError('signup-error', 'Please fill in all fields.'); return; }
   if(password.length < 6)  { showAuthError('signup-error', 'Password must be at least 6 characters.'); return; }
   if(password !== confirm)  { showAuthError('signup-error', 'Passwords do not match.'); return; }
+
+  const btn = document.getElementById('signup-submit-btn');
+  const original = btn.textContent;
+  signupInFlight = true;
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
   try {
     currentSession = await db.auth.signUpWithPassword(email, password);
     currentProfile = null;
@@ -1450,6 +1640,10 @@ async function doSignup() {
     if (currentSession) switchTab(readPendingCheckoutIntent() ? 'onboarding' : 'profile');
   } catch (e) {
     showAuthError('signup-error', e.message || 'Could not create your account.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+    signupInFlight = false;
   }
 }
 
@@ -1636,6 +1830,7 @@ function loadProfilePanel() {
 }
 
 async function saveProfile() {
+  if (profileSaveInFlight) return;
   if (!db.ready) { notConfiguredToast(); return; }
   const first = document.getElementById('p-first').value.trim();
   const last  = document.getElementById('p-last').value.trim();
@@ -1649,6 +1844,11 @@ async function saveProfile() {
   const m     = getCurrentMember();
   if(!m) return;
 
+  const btn = document.getElementById('profile-save-btn');
+  const original = btn.textContent;
+  profileSaveInFlight = true;
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
   try {
     currentProfile = await db.profiles.upsertMine({
       first, last,
@@ -1664,6 +1864,10 @@ async function saveProfile() {
     showToast('Profile saved!');
   } catch (e) {
     showToast(e.message || 'Could not save your profile.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+    profileSaveInFlight = false;
   }
 }
 
@@ -2291,7 +2495,7 @@ function renderGrid() {
 }
 
 // ── TAB SWITCHING ──
-const PUBLIC_TABS = new Set(['welcome', 'map', 'pricing']);
+const PUBLIC_TABS = new Set(['welcome', 'map', 'pricing', 'privacy', 'terms']);
 
 function switchTab(tab) {
   if (!PUBLIC_TABS.has(tab) && !getCurrentAccount()) {
@@ -2300,7 +2504,7 @@ function switchTab(tab) {
   }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  ['welcome','directory','map','onboarding','profile','messages','pricing'].forEach(name => {
+  ['welcome','directory','map','onboarding','profile','messages','pricing','privacy','terms'].forEach(name => {
     const panel = document.getElementById('panel-' + name);
     if (panel) panel.classList.toggle('active', name === tab);
   });
@@ -2324,6 +2528,7 @@ function handleJoinNavClick() {
 
 // ── ONBOARDING SUBMIT ──
 async function submitForm() {
+  if (onboardingSubmitInFlight) return;
   if (!db.ready) { notConfiguredToast(); return; }
   const acct = getCurrentAccount();
   if(!acct) { openAuthModal('login'); return; }
@@ -2339,6 +2544,11 @@ async function submitForm() {
   if(!lobs.length) { showToast('Select at least one line of business.'); return; }
   const specs  = getCheckedIn('spec-grid');
 
+  const btn = document.getElementById('onboarding-submit-btn');
+  const original = btn.textContent;
+  onboardingSubmitInFlight = true;
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
   try {
     currentProfile = await db.profiles.upsertMine({
       first, last,
@@ -2363,6 +2573,10 @@ async function submitForm() {
     await maybeResumeCheckout();
   } catch (e) {
     showToast(e.message || 'Could not save your profile.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+    onboardingSubmitInFlight = false;
   }
 }
 
