@@ -1,5 +1,129 @@
 # Verification report
 
+## Live verification — 2026-08-06/07 (supersedes the stale sections below)
+
+Everything in this section was run against the real production system
+(insurance-mavericks.com, the live Supabase project, and Stripe live mode)
+after migrations 0001–0005 were confirmed applied and a broken Supabase
+Auth "Site URL" (was `localhost:3000`, breaking every email-confirmation
+link) was fixed. This closes the gap the 2026-08-05 snapshot below left
+open: those 8 probes had never actually been run against a live schema.
+
+### Two real bugs found and fixed live
+
+1. **`upsert_my_profile` was completely broken — blocked every signup.**
+   `RETURNS TABLE(..., user_id uuid, ...)` collided with the bare
+   `on conflict (user_id)` target inside the function body, causing
+   `ERROR: column reference "user_id" is ambiguous` (42702) on every call.
+   Discovered via probe 1 below. Verified the fix
+   (`#variable_conflict use_column`) against a real local `postgres:15`
+   container — both the insert path and the update/on-conflict path —
+   before recommending it. Applied live as
+   `0006_fix_upsert_my_profile_ambiguous_column.sql`. Re-verified live:
+   profile creation now succeeds.
+2. **The message-notification Database Webhook was never actually
+   created.** `netlify/functions/message-email-hook.js` is correct — it
+   sends a real, delivered email when invoked directly — but nothing was
+   calling it. `DEPLOY.md` §5 describes this as a Dashboard "Database
+   Webhook" step, which was never completed. First fix attempt used
+   `supabase_functions.http_request()`, which this project doesn't have
+   (`schema "supabase_functions" does not exist` — confirmed live). This
+   project uses the `pg_net`-based mechanism instead, which is what
+   Supabase's Dashboard "Create a new hook" flow actually generates.
+   Corrected trigger applied live as
+   `0007_message_notification_webhook_trigger.sql` (syntax/logic verified
+   against a locally stubbed `net.http_post` before applying; the real
+   HTTP call itself isn't testable outside Supabase's environment).
+   Re-verified live: a real `send_message` call now triggers an automatic,
+   delivered notification email within ~4 seconds, no manual invocation
+   needed.
+
+### Live RLS/RPC probes — all 8 planned + 2 bonus, ALL PASS
+
+Ran against two throwaway pre-confirmed Supabase Auth users (created via
+the admin API, since real signup requires an inbox we don't control for
+the `@insurance-mavericks.com` test addresses used).
+
+| # | Probe | Result |
+| --- | --- | --- |
+| 1 | Create profile via `upsert_my_profile` | PASS (after the fix above; failed before it) |
+| 2 | Direct `PATCH profiles` setting `tier=pro` | PASS — rejected, `42501 permission denied for table profiles` |
+| 3 | Direct `PATCH`/`INSERT` on `stripe_customer_id` | PASS — rejected, same `42501` |
+| 4 | `SELECT` another profile's Stripe columns | PASS — rejected, same `42501` |
+| 5 | `set_my_tier('free')` (idempotent) | PASS — succeeds |
+| 6 | `send_message` to a recipient with no profile | PASS — rejected, "Recipient has no profile" |
+| 7 | `send_message` from a sender with no profile | PASS — rejected, "Create your profile before sending messages" |
+| 8 | `get_directory_stats()` (anon) | PASS — returns real aggregate counts |
+| bonus | `get_my_email_prefs()` | PASS — defaults `true` |
+| bonus | `get_state_coverage_counts()` (anon, 0005) | PASS — returns real per-state counts |
+
+### Full signup/messaging smoke test — ALL PASS
+
+Two throwaway profiles created and confirmed in Directory search. Email
+notification toggle confirmed to persist (`false` then `true` round-trip).
+One account granted a test Pro tier via the Supabase **service role**
+directly against the table (never through the app's own RPCs/anon key —
+that path is exactly what the hardening above blocks). Messaging then
+exercised fully live: Free→Pro send succeeds, unread count correct,
+`mark_thread_read` works, reply-in-thread from Pro→Free succeeds
+regardless of tier (matches the intended messaging rules). Welcome email
+confirmed: sends on first call, delivered, at-most-once (`alreadyClaimed`
+on a second call, no duplicate send), correct branded content, valid
+unsubscribe link. Message-notification email confirmed firing
+automatically post-fix (see bug #2 above). Cleanup: tier reverted to
+`free` before deletion, both profiles and both Auth users fully deleted
+via the admin API — no leftover data (better than anticipated; the admin
+API can delete Auth users cleanly, not just profiles).
+
+### Stripe webhook verification — real signed events, not the dashboard's test-event button
+
+Rather than fight repeated Stripe dashboard rendering instability, this
+was done by constructing genuinely valid `Stripe-Signature` headers
+locally (the signing scheme is public: HMAC-SHA256 over
+`timestamp.payload` using the real `STRIPE_WEBHOOK_SECRET`) and POSTing
+directly to the live endpoint — arguably more rigorous than Stripe's own
+"send test event" button, since it exercises real profile resolution
+against a real (harmless, no-charge) Stripe customer rather than
+disconnected fake IDs.
+
+| Event | Result |
+| --- | --- |
+| `checkout.session.completed` (real test customer, no subscriptions) | PASS — 200, resolved profile via `metadata.supabase_user_id`, wrote `stripe_customer_id` correctly, tier stayed `free` (correct — no real subscription) |
+| `customer.subscription.updated` (fake subscription id) | PASS — 200, Stripe 404 on the fake id handled correctly (`isStripeNotFound` → tier defaults to `free`), wrote `stripe_subscription_id` correctly |
+| `customer.subscription.deleted` (same fake id) | PASS — 200, same correct no-op-at-free handling |
+| Invalid signature | PASS — 400, "No signatures found matching the expected signature" |
+
+This still does not exercise a real Checkout Session UI flow or a real
+paid subscription (deliberately skipped — this Stripe account is in live
+mode, so that would charge a real card). Real end-to-end checkout through
+the browser UI remains unverified live. Test Stripe customer and test
+Supabase account both fully cleaned up.
+
+### Config sanity checks
+
+- `RESEND_API_KEY` set in Netlify **is the full-access key**, not
+  sending-scoped (confirmed by successfully listing all Resend API keys,
+  which a sending-scoped key cannot do). `DEPLOY.md` already recommends
+  swapping this for production; not yet done — separate decision.
+- `public/supabase-client.js`'s `SUPABASE_URL`/`SUPABASE_ANON_KEY` exactly
+  match the live Netlify environment variables.
+
+### Still not verified live
+
+- Real Checkout Session UI flow with a real payment method (deliberately
+  skipped, live-mode charge risk).
+- Real signup through the actual browser UI end-to-end (the RLS/messaging
+  probes above used the Supabase Admin API to create pre-confirmed test
+  users, not the real signup form + email link, though the underlying
+  Site-URL bug that would have broken that path was separately confirmed
+  fixed by the user).
+- Google Sign-In — intentionally unconfigured
+  (`GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'`); no action taken.
+
+---
+
+## 2026-08-05 snapshot (historical — see live verification above for current state)
+
 Date: 2026-08-05
 Scope: PLAN.md revision 6, build steps B2 through B7. B1 was inherited as complete.
 
@@ -57,13 +181,13 @@ The app was served successfully over loopback for an HTTP-level smoke test. A br
 
 No live throwaway account, profile, message, or storage object was created because the application schema is absent. No cleanup was required. If later probes create a throwaway profile, remove it through delete_my_profile; its Auth user and avatar objects may remain until an administrator deletes them.
 
-## Required post-deploy checks
+## Required post-deploy checks (status as of the 2026-08-06/07 live verification above)
 
-1. Apply migrations 0001, 0002, and 0003 in order.
-2. Run authenticated probes 1–8 above, with special attention to direct PATCH of tier.
-3. Verify signed-out and signed-in console state in a real browser.
-4. Exercise two real sessions for new-thread gating, reply-after-thread behavior, unread counts, and mark-read.
-5. Exercise all four Stripe test prices, in-place plan change, recoverable billing redirect, cancellation, duplicate reconciliation, and webhook retries.
+1. ~~Apply migrations 0001, 0002, and 0003 in order.~~ DONE — 0001–0007 all applied live.
+2. ~~Run authenticated probes 1–8 above~~ DONE — all pass, see live verification section.
+3. Verify signed-out and signed-in console state in a real browser. STILL OPEN — live testing used the Admin API for test accounts, not a real browser session.
+4. ~~Exercise two real sessions for new-thread gating, reply-after-thread behavior, unread counts, and mark-read.~~ DONE via direct API calls (not a real browser session) — see live verification section.
+5. Exercise all four Stripe test prices, in-place plan change, recoverable billing redirect, cancellation, duplicate reconciliation, and webhook retries. PARTIALLY DONE — webhook event handling verified with real signed events (see live verification section); the real Checkout Session UI flow with an actual payment method remains untested (deliberately, to avoid a live-mode charge).
 
 
 ## Resend email infrastructure — revision 3

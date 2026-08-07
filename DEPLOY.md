@@ -4,13 +4,15 @@ This repository deploys as a static Netlify site from `public/` with serverless 
 
 ## 1. Supabase migrations
 
-Run all five SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
+Run all seven SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
 
 1. `supabase/migrations/0001_init.sql`
 2. `supabase/migrations/0002_tiers_and_messaging.sql`
 3. `supabase/migrations/0003_harden_tiers_and_messaging.sql`
 4. `supabase/migrations/0004_email_notifications.sql`
 5. `supabase/migrations/0005_state_coverage_stats.sql`
+6. `supabase/migrations/0006_fix_upsert_my_profile_ambiguous_column.sql` — fixes a bug in 0003 that blocked every signup (`upsert_my_profile` failed with "column reference user_id is ambiguous"). Required even on a fresh project — this isn't optional cleanup.
+7. `supabase/migrations/0007_message_notification_webhook_trigger.sql` — creates the message-notification Database Webhook trigger via `pg_net` directly. **Before running, replace `<MESSAGE_WEBHOOK_SECRET>` in the file with the actual value of the `MESSAGE_WEBHOOK_SECRET` Netlify environment variable.** This supersedes the manual "Database > Webhooks > Create a new hook" instructions in section 5 below — creating the trigger via SQL is equivalent and more reliable than the Dashboard wizard.
 
 The browser anon key cannot apply schema changes. Never expose `SUPABASE_SERVICE_ROLE_KEY` in `public/` or any browser code.
 
@@ -77,6 +79,18 @@ Email failures never alter Stripe webhook status codes or trigger a Stripe retry
 
 ## 5. Supabase message Database Webhook
 
+**Already handled by migration `0007_message_notification_webhook_trigger.sql`
+in section 1 above** — run that migration (with the real
+`MESSAGE_WEBHOOK_SECRET` substituted in) instead of using the Dashboard
+wizard described below. The Dashboard's "Database > Webhooks" UI generates
+the exact same underlying `pg_net`-based trigger; creating it via SQL was
+confirmed more reliable in practice (2026-08-07) and lets the whole schema
+live in version control instead of undocumented Dashboard state. Skip the
+rest of this section if you've run migration 0007.
+
+<details>
+<summary>Dashboard wizard steps (not needed if you ran migration 0007)</summary>
+
 In Supabase Dashboard, create a Database Webhook with:
 
 - Table: `public.messages`
@@ -87,6 +101,8 @@ In Supabase Dashboard, create a Database Webhook with:
 - Header value: exactly the Netlify `MESSAGE_WEBHOOK_SECRET`
 - Content type: JSON
 - Timeout: allow at least 10 seconds; the downstream Resend request itself times out at about 10 seconds
+
+</details>
 
 Supabase Database Webhooks are asynchronous `pg_net` calls and do not provide guaranteed retries. View delivery attempts and response details in the webhook’s Supabase Dashboard logs; also review Netlify function logs. A lost webhook or transient Resend outage can permanently lose a notification.
 
