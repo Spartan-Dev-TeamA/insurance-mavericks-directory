@@ -4,7 +4,7 @@ This repository deploys as a static Netlify site from `public/` with serverless 
 
 ## 1. Supabase migrations
 
-Run all seven SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
+Run all eight SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
 
 1. `supabase/migrations/0001_init.sql`
 2. `supabase/migrations/0002_tiers_and_messaging.sql`
@@ -13,6 +13,7 @@ Run all seven SQL migrations in order in the Supabase SQL Editor or through the 
 5. `supabase/migrations/0005_state_coverage_stats.sql`
 6. `supabase/migrations/0006_fix_upsert_my_profile_ambiguous_column.sql` — fixes a bug in 0003 that blocked every signup (`upsert_my_profile` failed with "column reference user_id is ambiguous"). Required even on a fresh project — this isn't optional cleanup.
 7. `supabase/migrations/0007_message_notification_webhook_trigger.sql` — creates the message-notification Database Webhook trigger via `pg_net` directly. **Before running, replace `<MESSAGE_WEBHOOK_SECRET>` in the file with the actual value of the `MESSAGE_WEBHOOK_SECRET` Netlify environment variable.** This supersedes the manual "Database > Webhooks > Create a new hook" instructions in section 5 below — creating the trigger via SQL is equivalent and more reliable than the Dashboard wizard.
+8. `supabase/migrations/0008_expand_lines_of_business.sql` — retires the Commercial P&C option, remaps existing profiles holding it to Commercial Property, and adds the expanded commercial catalog. It is idempotent and safe to re-run.
 
 The browser anon key cannot apply schema changes. Never expose `SUPABASE_SERVICE_ROLE_KEY` in `public/` or any browser code.
 

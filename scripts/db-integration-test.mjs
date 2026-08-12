@@ -34,8 +34,15 @@ alter default privileges for role postgres in schema public grant all on tables 
 alter default privileges for role postgres in schema public grant usage,select on sequences to anon,authenticated,service_role;
 `;
  const boot=psql(bootstrap);if(boot.status!==0)throw new Error(boot.stderr.trim()||'bootstrap failed');
- for(const name of ['0001_init.sql','0002_tiers_and_messaging.sql','0003_harden_tiers_and_messaging.sql','0004_email_notifications.sql']){const sql=await fs.readFile(path.join(repo,'supabase','migrations',name),'utf8'),a=psql(sql,{timeout:60000});if(a.status!==0)throw new Error(name+': '+a.stderr.trim());}
- report('migrations 0001-0004 apply in order',true);
+ const migrationsDir=path.join(repo,'supabase','migrations');
+ const migrations=(await fs.readdir(migrationsDir)).filter(name=>name.endsWith('.sql')).sort();
+ // SKIP only migrations that require Supabase-only extensions unavailable in stock postgres:15.
+ const skippedMigrations=new Set(['0007_message_notification_webhook_trigger.sql']);
+ for(const name of migrations){
+  if(skippedMigrations.has(name)){report('migration skipped',true,name+' requires the Supabase-only pg_net extension, which stock postgres:15 does not provide');continue;}
+  const sql=await fs.readFile(path.join(migrationsDir,name),'utf8'),a=psql(sql,{timeout:60000});if(a.status!==0)throw new Error(name+': '+a.stderr.trim());
+ }
+ report('all stock-Postgres-compatible migrations apply in filename order',true);
  const fixtures=`
 insert into auth.users(id,email) values ('${ids.low}','low@example.test'),('${ids.high}','high@example.test'),('${ids.outsider}','outside@example.test');
 insert into public.profiles(user_id,first_name,last_name,home_state,states,lobs) values

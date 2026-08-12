@@ -610,6 +610,14 @@
   .form-section-gap { margin-top: 28px; }
 
   .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .checkbox-grid.is-grouped { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+
+  .checkbox-group-title {
+    grid-column: 1 / -1;
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+    letter-spacing: 2.5px; color: var(--green);
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
 
   .checkbox-item {
     display: flex; align-items: center; gap: 8px;
@@ -1089,7 +1097,7 @@
         </div>
         <div class="form-section-gap">
           <div class="form-section-title">03 — Lines of Business</div>
-          <div class="checkbox-grid" id="lob-grid"></div>
+          <div class="checkbox-grid is-grouped" id="lob-grid"></div>
         </div>
         <div class="form-section-gap">
           <div class="form-section-title">04 — Specializations</div>
@@ -1181,7 +1189,7 @@
           </div>
           <div class="form-section-gap">
             <div class="form-section-title">03 — Lines of Business</div>
-            <div class="checkbox-grid" id="p-lob-grid"></div>
+            <div class="checkbox-grid is-grouped" id="p-lob-grid"></div>
           </div>
           <div class="form-section-gap">
             <div class="form-section-title">04 — Specializations</div>
@@ -1437,7 +1445,24 @@ const STATE_TILE_LAYOUT = [
   ['FL',9,8]
 ];
 
-const LOBS   = ["Commercial P&C","Workers Comp","General Liability","Commercial Auto","BOP","Cyber","E&O / D&O","Surety & Bonds","Personal Auto","Homeowners","Renters","Umbrella","Life Insurance","Disability","Group Benefits","Health","Medicare","Annuities"];
+const LOB_GROUPS = [
+  { group: "Commercial", items: [
+    "Commercial Property","General Liability","BOP","Commercial Auto","Workers Comp",
+    "Commercial Umbrella / Excess","Product Liability","Liquor Liability","E&O / D&O",
+    "EPLI","Fiduciary Liability","Crime & Fidelity","Cyber","Inland Marine",
+    "Ocean Marine & Cargo","Builders Risk","Equipment Breakdown",
+    "Trucking & Motor Carrier","Garage & Dealers","Farm & Ranch",
+    "Environmental & Pollution","Aviation","Commercial Flood","Commercial Earthquake",
+    "Special Events","Excess & Surplus (E&S)","Terrorism","Surety & Bonds"
+  ]},
+  { group: "Personal", items: [
+    "Personal Auto","Homeowners","Renters","Umbrella"
+  ]},
+  { group: "Life & Benefits", items: [
+    "Life Insurance","Disability","Group Benefits","Health","Medicare","Annuities"
+  ]}
+];
+const LOBS = LOB_GROUPS.flatMap(g => g.items);
 const SPECS  = ["Contractors","Restaurants","Trucking","Healthcare","Real Estate","Construction","Retail","Hospitality","Technology","Nonprofits","Agriculture","Manufacturing","Professional Services","High Value Homes","High Net Worth","Small Business","Veteran-Owned Biz","Franchise"];
 
 // ── STATE ──
@@ -2319,11 +2344,29 @@ function initStateGrid(gridId, stateArr) {
 function initCheckboxGrid(gridId, items) {
   const grid = document.getElementById(gridId);
   items.forEach(item => {
+    if (typeof item !== 'string') {
+      const title = document.createElement('div');
+      title.className = 'checkbox-group-title';
+      title.textContent = item.group;
+      grid.appendChild(title);
+      item.items.forEach(groupItem => appendCheckbox(groupItem));
+      return;
+    }
+    appendCheckbox(item);
+  });
+
+  function appendCheckbox(item) {
     const label = document.createElement('label');
     label.className = 'checkbox-item';
-    label.innerHTML = `<input type="checkbox" value="${item}"><span>${item}</span>`;
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = item;
+    const span = document.createElement('span');
+    span.textContent = item;
+    label.appendChild(input);
+    label.appendChild(span);
     grid.appendChild(label);
-  });
+  }
 }
 
 function getCheckedIn(gridId) {
@@ -2421,8 +2464,22 @@ function populateFilters() {
   sf.innerHTML = '<option value="">All States</option>';
   lf.innerHTML = '<option value="">All Lines of Business</option>';
   STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
-  [...lobSet].sort().forEach(l  => { const o = document.createElement('option'); o.value = l; o.textContent = l; lf.appendChild(o); });
-  sf.value = sv; lf.value = lv;
+  LOB_GROUPS.forEach(group => {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = group.group;
+    group.items.forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l; optgroup.appendChild(o); });
+    lf.appendChild(optgroup);
+  });
+  const otherLobs = [...lobSet].filter(l => !LOBS.includes(l)).sort();
+  if (otherLobs.length) {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = 'Other';
+    otherLobs.forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l; optgroup.appendChild(o); });
+    lf.appendChild(optgroup);
+  }
+  sf.value = sv;
+  lf.value = lv;
+  if (lf.selectedIndex === -1) lf.value = '';
   updateStats();
 }
 
@@ -2603,9 +2660,9 @@ function showToast(msg) {
 initMapInteractions();
 initStateGrid('state-grid',    selectedStates);
 initStateGrid('p-state-grid',  pSelectedStates);
-initCheckboxGrid('lob-grid',   LOBS);
+initCheckboxGrid('lob-grid',   LOB_GROUPS);
 initCheckboxGrid('spec-grid',  SPECS);
-initCheckboxGrid('p-lob-grid', LOBS);
+initCheckboxGrid('p-lob-grid', LOB_GROUPS);
 initCheckboxGrid('p-spec-grid',SPECS);
 
 async function init() {
