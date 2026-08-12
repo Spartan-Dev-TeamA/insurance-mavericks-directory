@@ -24,11 +24,11 @@ our authentication provider, Supabase.
 ## How we use it
 
 Your profile information is shown to other signed-in members in the
-directory so they can find licensed referral partners. Basic and Pro
-members' profiles additionally show a contact link to other members; Pro
-members can receive direct messages from other members through the
-site's built-in messaging feature. We do not sell your information to
-third parties.
+directory so they can find licensed referral partners, and every member's
+contact link is shown on their card. Specializations are shown on Basic
+and Pro cards. Basic and Pro members can message Pro members; Pro members
+can receive new conversations through the site's built-in messaging
+feature. We do not sell your information to third parties.
 
 ## Payment information
 

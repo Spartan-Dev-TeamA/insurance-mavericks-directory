@@ -25,7 +25,7 @@ Do not attempt to run migrations with the anon key. Migration 0003 revokes direc
 - Direct INSERT, UPDATE, and DELETE on profiles are revoked from browser roles.
 - Only set_my_tier('free') is allowed for self-service tier reset; paid tiers are written by the Stripe webhook with the service role.
 - A new message thread requires a Pro recipient and a sender profile.
-- Either participant may reply after a thread exists, regardless of current tier.
+- Basic and Pro members may send messages. Free members can read existing threads but cannot start conversations or reply at all.
 - Deleted profiles appear as Former member in existing thread lists.
 
 ## Authentication

@@ -608,6 +608,7 @@
 
   .form-group { display: flex; flex-direction: column; gap: 6px; }
   .form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .form-help { margin: 7px 0 10px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
   .form-group input,
   .form-group textarea {
@@ -847,6 +848,10 @@
     padding: 0 18px; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; cursor: pointer;
   }
   .msg-composer .send-btn:hover { background: #22d660; }
+  .msg-readonly {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px;
+  }
 
   @media (max-width: 640px) {
     .messages-layout { grid-template-columns: 1fr; height: auto; }
@@ -1035,7 +1040,7 @@
         <div class="why-grid">
           <article class="why-card"><div class="why-icon" aria-hidden="true">↗</div><h3>Cross-State Referrals</h3><p>Filter the directory by licensed coverage and connect with a partner who can help when an opportunity crosses your state line.</p><div class="referral-proof">Members report 3+ inbound referrals a month</div></article>
           <article class="why-card"><div class="why-icon" aria-hidden="true">◎</div><h3>Niche Specialists</h3><p>Search by line of business and specialization to find professionals equipped for the risk in front of you.</p></article>
-          <article class="why-card"><div class="why-icon" aria-hidden="true">✓</div><h3>Vetted Members</h3><p>Build relationships inside a private insurance community. Every tier can message Pro members; Pro profiles can receive new conversations from the network.</p></article>
+          <article class="why-card"><div class="why-icon" aria-hidden="true">✓</div><h3>Vetted Members</h3><p>Build relationships inside a private insurance community. Basic and Pro members can message Pro members; Pro profiles can receive new conversations from the network.</p></article>
         </div>
       </section>
 
@@ -1116,6 +1121,7 @@
         </div>
         <div class="form-section-gap">
           <div class="form-section-title">04 — Specializations</div>
+          <div class="form-help">Specializations appear on directory cards for Basic and Pro members.</div>
           <div class="checkbox-grid" id="spec-grid"></div>
         </div>
         <div class="form-section-gap">
@@ -1208,6 +1214,7 @@
           </div>
           <div class="form-section-gap">
             <div class="form-section-title">04 — Specializations</div>
+            <div class="form-help">Specializations appear on directory cards for Basic and Pro members. Free members can still save them here.</div>
             <div class="checkbox-grid" id="p-spec-grid"></div>
           </div>
           <div class="form-section-gap">
@@ -1254,7 +1261,7 @@
       <div class="public-panel-head">
         <div class="section-eyebrow">Simple membership</div>
         <h1>Choose how the network works for you</h1>
-        <p>Every member is listed and can message Pro members. Upgrade to show your contact link or let the entire network start conversations with you.</p>
+        <p>Every member is listed and can show a contact link. Upgrade to show your specializations and message Pro members; choose Pro to let the network start conversations with you.</p>
       </div>
       <div class="pricing-toggle-wrap">
         <label class="pricing-toggle"><input type="checkbox" id="pricing-annual-toggle" onchange="renderPricing()"> Bill annually</label>
@@ -1271,8 +1278,9 @@
           </thead>
           <tbody>
             <tr><td class="pricing-feature">Listed in the member directory</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
-            <tr><td class="pricing-feature">Your Facebook/contact link shown on your card</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
-            <tr><td class="pricing-feature">You can message any Pro member</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">Your Facebook/contact link shown on your card</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">Your specializations shown on your card</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
+            <tr><td class="pricing-feature">You can message any Pro member</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-check" aria-label="Included">✓</td><td class="pricing-check" aria-label="Included">✓</td></tr>
             <tr><td class="pricing-feature">Other members can start a conversation with you</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-x" aria-label="Not included">✗</td><td class="pricing-check" aria-label="Included">✓</td></tr>
             <tr><td class="pricing-feature">Price</td><td class="pricing-all-prices">$0</td><td class="pricing-all-prices" id="pricing-basic-all"></td><td class="pricing-all-prices" id="pricing-pro-all"></td></tr>
             <tr>
@@ -1304,7 +1312,7 @@
         <p>When you create a member profile, we collect: your first and last name, agency/company name, home state, licensed states, lines of business, specializations, a short bio, an optional Facebook profile URL, and an optional profile photo. Your email address and password (or Google account, if you sign in that way) are collected at signup and managed by our authentication provider, Supabase.</p>
 
         <h2>How we use it</h2>
-        <p>Your profile information is shown to other signed-in members in the directory so they can find licensed referral partners. Basic and Pro members' profiles additionally show a contact link to other members; Pro members can receive direct messages from other members through the site's built-in messaging feature. We do not sell your information to third parties.</p>
+        <p>Your profile information is shown to other signed-in members in the directory so they can find licensed referral partners, and every member's contact link is shown on their card. Specializations are shown on Basic and Pro cards. Basic and Pro members can message Pro members; Pro members can receive new conversations through the site's built-in messaging feature. We do not sell your information to third parties.</p>
 
         <h2>Payment information</h2>
         <p>If you subscribe to a paid membership tier, your payment is processed directly by Stripe. We do not receive or store your full card number — Stripe handles that. We do store your subscription tier and Stripe customer/subscription identifiers so we can keep your account status in sync with your billing status.</p>
@@ -1394,7 +1402,7 @@
     </div>
   </div>
 
-  <!-- MESSAGES PANEL (Pro members are messageable; anyone signed in can send/receive) -->
+  <!-- MESSAGES PANEL (Basic and Pro can send; Pro members can receive new conversations) -->
   <div class="panel" id="panel-messages">
     <div class="messages-layout">
       <div class="msg-thread-list" id="msg-thread-list"></div>
@@ -1420,7 +1428,7 @@
 
 <!-- Supabase client library + our data-access wrapper — see SUPABASE_SETUP.md -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="supabase-client.js"></script>
+<script src="supabase-client.js?v=20260812-tier-abilities"></script>
 <!-- Stripe checkout wrapper — see STRIPE_SETUP.md -->
 <script src="stripe-client.js"></script>
 
@@ -1736,6 +1744,10 @@ function getCurrentMember() {
   return currentProfile;
 }
 
+function canSendMessages() {
+  return ['basic', 'pro'].includes(currentProfile?.tier);
+}
+
 // ── AUTH UI ──
 function updateAuthUI() {
   const acct     = getCurrentAccount();
@@ -2029,14 +2041,15 @@ function renderMembershipOptions() {
   const upgradeButtons = available.map((plan, index) => {
     const priceLabel = membershipPriceLabel(plan, interval);
     const planLabel = plan === 'pro' ? 'Pro' : 'Basic';
-    return `<button class="membership-option-btn ${index > 0 ? 'secondary' : ''}" onclick="startMembershipCheckout('${plan}','${interval}')">Upgrade to ${planLabel} — ${priceLabel}</button>`;
+    const benefitLabel = plan === 'pro' ? 'Show specs + send & receive' : 'Show specs + message Pro';
+    return `<button class="membership-option-btn ${index > 0 ? 'secondary' : ''}" onclick="startMembershipCheckout('${plan}','${interval}')">Upgrade to ${planLabel} — ${priceLabel} · ${benefitLabel}</button>`;
   });
 
   if (tier === 'basic' || tier === 'pro') {
     upgradeButtons.push('<button class="membership-option-btn secondary" onclick="openBillingPortal()">Manage billing</button>');
   }
   if (tier === 'pro') {
-    upgradeButtons.unshift('<div class="membership-maxed">You’re on the top Pro tier — thanks for being a Maverick!</div>');
+    upgradeButtons.unshift('<div class="membership-maxed">Your specializations are shown, you can message Pro members, and Basic and Pro members can start conversations with you.</div>');
   }
   opts.innerHTML = upgradeButtons.join('');
 }
@@ -2195,8 +2208,8 @@ async function handleCheckoutRedirect() {
 }
 
 // ── MESSAGING ──
-// A new conversation can target only a Pro member. Once a thread exists,
-// either participant can reply regardless of current tier.
+// A new conversation can target only a Pro member. Basic and Pro members
+// can start and reply to conversations; Free members retain read-only history.
 let threadsCache = [];
 let activeThreadOtherUserId = null;
 let messagePollTimer = null;
@@ -2220,6 +2233,18 @@ async function pollMessages() {
     return;
   }
   try {
+    const previousTier = currentProfile?.tier;
+    await refreshCurrentProfile();
+    if (previousTier !== currentProfile?.tier) {
+      await refreshMembers();
+      await refreshStateCoverage();
+      populateFilters();
+      renderGrid();
+      renderMap();
+      await updateWelcomeStats();
+      updateAuthUI();
+      if (document.getElementById('panel-profile')?.classList.contains('active')) loadProfilePanel();
+    }
     await fetchThreads();
     if (document.getElementById('panel-messages')?.classList.contains('active')) {
       await renderMessagesTab(true);
@@ -2236,6 +2261,11 @@ function startMessagePolling() {
 
 function openMessageWith(userId) {
   if (!getCurrentAccount()) { openAuthModal('login'); return; }
+  if (!canSendMessages()) {
+    showToast('Messaging is available on Basic and Pro. Upgrade to start or reply to conversations.');
+    switchTab('pricing');
+    return;
+  }
   activeThreadOtherUserId = userId;
   switchTab('messages');
 }
@@ -2267,7 +2297,9 @@ async function renderMessagesTab(useCachedThreads = false) {
           </div>
         </div>`;
     }).join('')
-    : '<div class="msg-empty-hint">No conversations yet.<br>Click MESSAGE on a Pro member’s card to start one.</div>';
+    : canSendMessages()
+      ? '<div class="msg-empty-hint">No conversations yet.<br>Click MESSAGE on a Pro member’s card to start one.</div>'
+      : '<div class="msg-empty-hint">No conversations yet.<br>Upgrade to Basic or Pro to start conversations.</div>';
 
   list.querySelectorAll('.msg-thread-row').forEach(row => {
     row.onclick = () => openThread(row.dataset.uid);
@@ -2276,8 +2308,9 @@ async function renderMessagesTab(useCachedThreads = false) {
   if (activeThreadOtherUserId) {
     await renderThreadPane(activeThreadOtherUserId);
   } else {
-    document.getElementById('msg-thread-pane').innerHTML =
-      '<div class="msg-empty-hint">Select a conversation, or click MESSAGE on a Pro member’s card.</div>';
+    document.getElementById('msg-thread-pane').innerHTML = canSendMessages()
+      ? '<div class="msg-empty-hint">Select a conversation, or click MESSAGE on a Pro member’s card.</div>'
+      : '<div class="msg-empty-hint">Select a conversation to read it. Upgrade to Basic or Pro to send messages.</div>';
   }
 }
 
@@ -2314,24 +2347,40 @@ async function renderThreadPane(otherUserId) {
     <div class="msg-thread-body" id="msg-thread-body">
       ${messages.map(message => `<div class="msg-bubble ${message.sender_id === myUserId ? 'me' : 'them'}">${esc(message.body)}</div>`).join('')}
     </div>
+    ${canSendMessages() ? `
     <div class="msg-composer">
       <textarea id="msg-reply-text" placeholder="Type a message..." rows="1"></textarea>
       <button class="send-btn" onclick="sendThreadMessage('${esc(otherUserId)}')">SEND</button>
     </div>
+    ` : `
+    <div class="msg-readonly">
+      <span>Your message history is read-only on Free. Upgrade to send or reply.</span>
+      <button class="membership-option-btn" onclick="switchTab('pricing')">UPGRADE</button>
+    </div>
+    `}
   `;
 
   const body = document.getElementById('msg-thread-body');
   body.scrollTop = body.scrollHeight;
-  document.getElementById('msg-reply-text').addEventListener('keydown', event => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendThreadMessage(otherUserId);
-    }
-  });
+  const replyTextarea = document.getElementById('msg-reply-text');
+  if (replyTextarea) {
+    replyTextarea.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendThreadMessage(otherUserId);
+      }
+    });
+  }
 }
 
 async function sendThreadMessage(otherUserId) {
+  if (!canSendMessages()) {
+    showToast('Messaging is available on Basic and Pro. Upgrade to start or reply to conversations.');
+    switchTab('pricing');
+    return;
+  }
   const textarea = document.getElementById('msg-reply-text');
+  if (!textarea) return;
   const body = textarea.value.trim();
   if (!body) return;
   try {
@@ -2554,10 +2603,10 @@ function renderGrid() {
     if (isSelf) {
       actions.push('<button class="contact-btn" onclick="switchTab(\'profile\')">EDIT PROFILE</button>');
     } else {
-      if ((isBasic || isPro) && facebookUrl) {
+      if (facebookUrl) {
         actions.push(`<a class="contact-btn" href="${esc(facebookUrl)}" target="_blank" rel="noopener noreferrer">VIEW PROFILE</a>`);
       }
-      if (isPro) {
+      if (isPro && canSendMessages()) {
         actions.push(`<button class="contact-btn" onclick="openMessageWith('${esc(member.userId)}')">MESSAGE</button>`);
       }
     }

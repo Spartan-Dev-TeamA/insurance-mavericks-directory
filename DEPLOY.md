@@ -4,7 +4,7 @@ This repository deploys as a static Netlify site from `public/` with serverless 
 
 ## 1. Supabase migrations
 
-Run all eight SQL migrations in order in the Supabase SQL Editor or through the Supabase CLI:
+Run the SQL migrations in numeric order in the Supabase SQL Editor or through the Supabase CLI, with the required client deployment between migrations 0009 and 0010:
 
 1. `supabase/migrations/0001_init.sql`
 2. `supabase/migrations/0002_tiers_and_messaging.sql`
@@ -14,6 +14,12 @@ Run all eight SQL migrations in order in the Supabase SQL Editor or through the 
 6. `supabase/migrations/0006_fix_upsert_my_profile_ambiguous_column.sql` — fixes a bug in 0003 that blocked every signup (`upsert_my_profile` failed with "column reference user_id is ambiguous"). Required even on a fresh project — this isn't optional cleanup.
 7. `supabase/migrations/0007_message_notification_webhook_trigger.sql` — creates the message-notification Database Webhook trigger via `pg_net` directly. **Before running, replace `<MESSAGE_WEBHOOK_SECRET>` in the file with the actual value of the `MESSAGE_WEBHOOK_SECRET` Netlify environment variable.** This supersedes the manual "Database > Webhooks > Create a new hook" instructions in section 5 below — creating the trigger via SQL is equivalent and more reliable than the Dashboard wizard.
 8. `supabase/migrations/0008_expand_lines_of_business.sql` — retires the Commercial P&C option, remaps existing profiles holding it to Commercial Property, and adds the expanded commercial catalog. It is idempotent and safe to re-run.
+9. `supabase/migrations/0009_directory_profile_reads.sql` — adds the authenticated `list_directory()` and `get_my_profile()` read RPCs used by the new client. This additive migration must be applied before that client is deployed.
+10. `supabase/migrations/0010_enforce_tier_abilities.sql` — revokes direct specialization reads, masks Free specializations in directory RPCs, limits sending to Basic and Pro members, and counts only paid-tier specializations in directory stats. Apply it only after the client using the 0009 RPCs is live.
+
+**Required rollout order:** run 0009, then deploy the Netlify client carrying the new `public/supabase-client.js`, then run 0010. Running 0010 before that client deploy takes the site down because the old client still reads profiles directly.
+
+**Rollback:** after 0010, reverting the client by itself breaks profile and directory reads because direct profile selects are denied. To roll back, first restore the direct profile column grant established by migration 0003, then deploy the previous client.
 
 The browser anon key cannot apply schema changes. Never expose `SUPABASE_SERVICE_ROLE_KEY` in `public/` or any browser code.
 

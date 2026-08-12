@@ -63,10 +63,14 @@ Two throwaway profiles created and confirmed in Directory search. Email
 notification toggle confirmed to persist (`false` then `true` round-trip).
 One account granted a test Pro tier via the Supabase **service role**
 directly against the table (never through the app's own RPCs/anon key —
-that path is exactly what the hardening above blocks). Messaging then
-exercised fully live: Free→Pro send succeeds, unread count correct,
-`mark_thread_read` works, reply-in-thread from Pro→Free succeeds
-regardless of tier (matches the intended messaging rules). Welcome email
+that path is exactly what the hardening above blocks). Messaging was
+exercised fully live under the rules in effect at the time: Free→Pro send
+succeeded, the unread count was correct, `mark_thread_read` worked, and a
+Pro→Free reply succeeded. Migration 0010 supersedes those sending rules:
+Basic and Pro members may send, Free members can read existing threads but
+cannot start or reply to conversations, and new threads still require a Pro
+recipient. The current rules are covered by the database integration test
+and require live re-verification after rollout. Welcome email
 confirmed: sends on first call, delivered, at-most-once (`alreadyClaimed`
 on a second call, no duplicate send), correct branded content, valid
 unsubscribe link. Message-notification email confirmed firing

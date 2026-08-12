@@ -2,11 +2,6 @@
 const SUPABASE_URL = 'https://krdjdzikepmkcjjibvqt.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtyZGpkemlrZXBta2NqamlidnF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MjI1OTgsImV4cCI6MjEwMTQ5ODU5OH0.k_NOjlg_RKhGorj56gjJ0tc9R4azfbbvynPJh65hcUU';
 const DB_READY = true;
-const PROFILE_COLUMNS = [
-  'id', 'user_id', 'first_name', 'last_name', 'agency', 'home_state',
-  'states', 'lobs', 'specs', 'bio', 'facebook_url', 'photo_url',
-  'joined_at', 'updated_at', 'tier'
-].join(',');
 const MESSAGE_COLUMNS = 'id,thread_id,sender_id,body,read,created_at';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -106,9 +101,7 @@ window.db = {
 
   profiles: {
     async list() {
-      const { data, error } = await sb.from('profiles')
-        .select(PROFILE_COLUMNS)
-        .order('joined_at', { ascending: false });
+      const { data, error } = await sb.rpc('list_directory');
       if (error) throw error;
       return data.map(mapProfileRow);
     },
@@ -127,12 +120,9 @@ window.db = {
       const { data: userData, error: userError } = await sb.auth.getUser();
       if (userError) throw userError;
       if (!userData?.user) return null;
-      const { data, error } = await sb.from('profiles')
-        .select(PROFILE_COLUMNS)
-        .eq('user_id', userData.user.id)
-        .maybeSingle();
+      const { data, error } = await sb.rpc('get_my_profile');
       if (error) throw error;
-      return mapProfileRow(data);
+      return mapProfileRow(Array.isArray(data) ? data[0] : data);
     },
 
     async upsertMine(profile) {
