@@ -9,6 +9,9 @@ Last updated: [DATE — fill in before publishing]
 
 ## Who this is for
 
+Insurance Mavericks is operated by Spartan Business Warriors LLC, doing business as
+Spartan AI ("we", "us", "our").
+
 Insurance Mavericks is a members-only directory and referral network for
 independent insurance professionals. By creating an account, you
 represent that you are an insurance professional using this site for
@@ -91,8 +94,9 @@ how you'll notify members of material changes before publishing.]
 
 ## Contact
 
-[DRAFT NOTE: add a real contact email/address before publishing.]
+Contact Spartan Business Warriors LLC at support@insurance-mavericks.com.
 
 ## Governing law
 
-[DRAFT NOTE: specify governing state/jurisdiction before publishing.]
+These terms are governed by the laws of the State of Wyoming. [DRAFT
+NOTE: venue/forum selection still needs counsel before publishing.]

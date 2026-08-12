@@ -9,6 +9,9 @@ if the product changes before publishing.
 
 Last updated: [DATE — fill in before publishing]
 
+Insurance Mavericks is operated by Spartan Business Warriors LLC, doing business as
+Spartan AI ("we", "us", "our").
+
 ## What we collect
 
 When you create a member profile, we collect: your first and last name,
@@ -55,12 +58,7 @@ identify Insurance Mavericks as the sender, use a subject line that
 accurately reflects the message content, include a working opt-out
 mechanism, honor opt-out requests within the legally required window,
 and include our valid postal mailing address, consistent with the
-CAN-SPAM Act. [DRAFT NOTE: our current transactional email templates do
-not include a physical postal mailing address. Add a real business
-mailing address to the email templates (`netlify/functions/lib/email.js`)
-before sending anything that could be characterized as marketing or
-promotional email, and before publishing this policy as final — this is
-a code change, not just a policy-text change.]
+CAN-SPAM Act.
 
 ## Cookies and local storage
 
@@ -82,8 +80,7 @@ backups may retain deleted data, before publishing.]
 
 You can turn off message-notification emails at any time from your
 profile. You can update or remove your profile information at any time.
-[DRAFT NOTE: add a real contact method — support email or address —
-before publishing.]
+You can contact us at support@insurance-mavericks.com.
 
 ## Your US privacy rights
 
@@ -107,4 +104,6 @@ how you'll notify members of material changes before publishing.]
 
 ## Contact
 
-[DRAFT NOTE: add a real contact email/address before publishing.]
+Contact Spartan Business Warriors LLC at support@insurance-mavericks.com
+or by mail at Spartan Business Warriors LLC, c/o Wyoming Registered Agent
+Services LLC, 30 N Gould St Ste R, Sheridan, WY 82801.

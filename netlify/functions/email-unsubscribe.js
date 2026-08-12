@@ -5,7 +5,7 @@ const { esc } = require('./lib/email');
 function page(title, message, form) {
   return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
     esc(title) + '</title></head><body style="margin:0;background:#0a0a0a;color:#f0f0f0;font-family:Arial,sans-serif"><main style="max-width:520px;margin:10vh auto;padding:32px;background:#151515;border:1px solid #282828;border-radius:12px"><div style="color:#1db954;font-weight:700;letter-spacing:2px">INSURANCE MAVERICKS</div><h1>' +
-    esc(title) + '</h1><p style="line-height:1.6;color:#ccc">' + esc(message) + '</p>' + (form || '') + '</main></body></html>';
+    esc(title) + '</h1><p style="line-height:1.6;color:#ccc">' + esc(message) + '</p>' + (form || '') + '<div style="margin-top:32px;font-size:12px;line-height:1.6;color:#888">Spartan Business Warriors LLC · c/o Wyoming Registered Agent Services LLC<br>30 N Gould St Ste R, Sheridan, WY 82801</div></main></body></html>';
 }
 
 function html(statusCode, body) {

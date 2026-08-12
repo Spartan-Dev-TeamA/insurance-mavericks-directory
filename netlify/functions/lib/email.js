@@ -4,6 +4,7 @@ const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const DEFAULT_FROM = 'notifications@insurance-mavericks.com';
 const USER_AGENT = 'Insurance-Mavericks-Email/1.0';
 const SEND_TIMEOUT_MS = 10000;
+const POSTAL_ADDRESS_TEXT = 'Spartan Business Warriors LLC · c/o Wyoming Registered Agent Services LLC\n30 N Gould St Ste R, Sheridan, WY 82801';
 
 function esc(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => ({
@@ -84,7 +85,7 @@ async function sendEmail({ to, subject, html, text, idempotencyKey, headers }, o
 }
 
 function frame(title, content, footer) {
-  return '<!doctype html><html><body style="margin:0;background:#0a0a0a;color:#f0f0f0;font-family:Arial,sans-serif"><div style="max-width:600px;margin:auto;padding:36px 24px"><div style="color:#1db954;font-weight:700;letter-spacing:2px">INSURANCE MAVERICKS</div><h1 style="font-size:28px;margin:24px 0 16px">' + title + '</h1><div style="font-size:16px;line-height:1.6;color:#d7d7d7">' + content + '</div><div style="margin-top:32px;font-size:12px;line-height:1.6;color:#888">' + footer + '</div></div></body></html>';
+  return '<!doctype html><html><body style="margin:0;background:#0a0a0a;color:#f0f0f0;font-family:Arial,sans-serif"><div style="max-width:600px;margin:auto;padding:36px 24px"><div style="color:#1db954;font-weight:700;letter-spacing:2px">INSURANCE MAVERICKS</div><h1 style="font-size:28px;margin:24px 0 16px">' + title + '</h1><div style="font-size:16px;line-height:1.6;color:#d7d7d7">' + content + '</div><div style="margin-top:32px;font-size:12px;line-height:1.6;color:#888">' + footer + '<div style="margin-top:12px">Spartan Business Warriors LLC · c/o Wyoming Registered Agent Services LLC<br>30 N Gould St Ste R, Sheridan, WY 82801</div></div></div></body></html>';
 }
 
 function cta(label, href) {
@@ -117,7 +118,7 @@ function membershipEmail({ transition, tier, interval }) {
   return {
     subject,
     html: frame(esc(heading), '<p>' + esc(copy) + '</p>' + cta('Manage your account', site), footer),
-    text: 'Insurance Mavericks\n\n' + heading + '\n\n' + copy + '\n\nManage your account: ' + site
+    text: 'Insurance Mavericks\n\n' + heading + '\n\n' + copy + '\n\nManage your account: ' + site + '\n\n' + POSTAL_ADDRESS_TEXT
   };
 }
 
@@ -130,7 +131,7 @@ function welcomeEmail({ userId, firstName }) {
   return {
     subject: 'Welcome to Insurance Mavericks',
     html: frame('Welcome to Insurance Mavericks', '<p>' + esc(copy) + '</p>' + cta('Explore the member directory', site), footer),
-    text: 'Insurance Mavericks\n\n' + copy + '\n\nExplore the member directory: ' + site + '\n\nManage email preferences from your profile. Stop message notification emails: ' + unsubscribe
+    text: 'Insurance Mavericks\n\n' + copy + '\n\nExplore the member directory: ' + site + '\n\nManage email preferences from your profile. Stop message notification emails: ' + unsubscribe + '\n\n' + POSTAL_ADDRESS_TEXT
   };
 }
 
@@ -147,7 +148,7 @@ function messageNotificationEmail({ recipientId, senderName }) {
   return {
     subject: 'You have a new message',
     html: frame('New message', '<p>' + esc(copy) + '</p>' + cta('View your messages', messagesUrl.toString()), '<a href="' + esc(unsubscribe) + '" style="color:#1db954">Unsubscribe from message notification emails</a>.'),
-    text: 'Insurance Mavericks\n\n' + copy + '\n\nView your messages: ' + messagesUrl + '\n\nUnsubscribe from message notification emails: ' + unsubscribe,
+    text: 'Insurance Mavericks\n\n' + copy + '\n\nView your messages: ' + messagesUrl + '\n\nUnsubscribe from message notification emails: ' + unsubscribe + '\n\n' + POSTAL_ADDRESS_TEXT,
     headers: listHeaders
   };
 }
