@@ -28,6 +28,14 @@ async function authedFunctionRequest(name, body) {
 }
 window.authedFunctionRequest = authedFunctionRequest;
 
+async function adminIncompleteProfiles(mode) {
+  return authedFunctionRequest('admin-incomplete-profiles', { mode: mode || 'report' });
+}
+window.adminIncompleteProfiles = {
+  probe() { return adminIncompleteProfiles('probe'); },
+  report() { return adminIncompleteProfiles('report'); }
+};
+
 function mapProfileRow(row) {
   if (!row) return null;
   return {

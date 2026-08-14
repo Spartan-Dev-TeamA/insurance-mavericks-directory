@@ -16,10 +16,13 @@ Run the SQL migrations in numeric order in the Supabase SQL Editor or through th
 8. `supabase/migrations/0008_expand_lines_of_business.sql` — retires the Commercial P&C option, remaps existing profiles holding it to Commercial Property, and adds the expanded commercial catalog. It is idempotent and safe to re-run.
 9. `supabase/migrations/0009_directory_profile_reads.sql` — adds the authenticated `list_directory()` and `get_my_profile()` read RPCs used by the new client. This additive migration must be applied before that client is deployed.
 10. `supabase/migrations/0010_enforce_tier_abilities.sql` — revokes direct specialization reads, masks Free specializations in directory RPCs, limits sending to Basic and Pro members, and counts only paid-tier specializations in directory stats. Apply it only after the client using the 0009 RPCs is live.
+11. `supabase/migrations/0011_onboarding_nudges.sql` — adds the service-role-only onboarding nudge state table and validates profile completeness inside `upsert_my_profile`. It does not modify the `profiles` schema, grants, RLS, or directory RPCs.
 
 **Required rollout order:** run 0009, then deploy the Netlify client carrying the new `public/supabase-client.js`, then run 0010. Running 0010 before that client deploy takes the site down because the old client still reads profiles directly.
 
 **Rollback:** after 0010, reverting the client by itself breaks profile and directory reads because direct profile selects are denied. To roll back, first restore the direct profile column grant established by migration 0003, then deploy the previous client.
+
+Migration 0011 and its client changes have no ordering dependency: 0011 is additive and the profile RPC signature and 15-column return shape are unchanged. Either side may deploy first.
 
 The browser anon key cannot apply schema changes. Never expose `SUPABASE_SERVICE_ROLE_KEY` in `public/` or any browser code.
 
@@ -60,6 +63,7 @@ Set these for the production deploy context, then trigger a new deploy:
 | `SITE_URL` | All email links | Fixed trusted production origin, for example `https://insurance-mavericks.com` |
 | `MESSAGE_WEBHOOK_SECRET` | Message email webhook | A long random secret, distinct from every other secret |
 | `UNSUBSCRIBE_HMAC_SECRET` | Signed unsubscribe links | A different long random secret, independently rotatable |
+| `ADMIN_USER_IDS` | Incomplete-profile admin report | Comma-separated immutable Supabase Auth user UUIDs; the admin endpoint fails closed when unset or empty |
 | `URL` | Checkout/portal return URLs | Netlify-provided production site URL; verify it |
 
 Generate each webhook/HMAC secret with a cryptographically secure password generator. Do not put values in SQL, webhook payloads, client code, docs, or source control. The verified Resend domain is `insurance-mavericks.com` (hyphenated).
@@ -134,7 +138,9 @@ Activate the portal, enable subscription cancellation, disable customer plan swi
 
 ## 8. Netlify settings
 
-`netlify.toml` publishes `public/` and loads functions from `netlify/functions/`. Keep repository docs, SQL, scripts, `package.json`, and `PLAN.md` outside the published directory.
+`netlify.toml` publishes `public/`, loads functions from `netlify/functions/`, and schedules `incomplete-profile-nudge` hourly. Scheduled functions run only on published deploys, not deploy previews. Each run scans incomplete auth users oldest-first, starts at most five sends, stops starting work at about 18 seconds, and logs deferred work for a later hourly run. The first published run automatically includes existing eligible profile-less users; there is no dry-run gate.
+
+Keep repository docs, SQL, scripts, `package.json`, and `PLAN.md` outside the published directory.
 
 ## 9. Verification commands and smoke tests
 
@@ -154,4 +160,7 @@ After deployment:
 5. Confirm message emails have a working confirmation-form unsubscribe link and inbox one-click headers; GET alone must not change the preference.
 6. Confirm membership activated, updated, and cancelled transitions send the correct template and no monetary amount.
 7. Exercise all Stripe prices, in-place plan changes, recoverable billing redirects, portal cancellation, duplicate reconciliation, and database-failure retries.
-8. Confirm direct browser writes to tier, Stripe identifiers, `welcomed_at`, and notification latch columns remain rejected.
+8. Confirm direct browser writes to tier, Stripe identifiers, `welcomed_at`, notification latch columns, and `onboarding_nudges` remain rejected.
+9. Test onboarding reminders with a seeded profile-less confirmed user: successful send then CAS, retry after provider failure, opt-out suppression, profile and unconfirmed-email exclusions, ordinal spacing, per-run deferral, and scoped unsubscribe cross-signature rejection.
+10. Test `admin-incomplete-profiles` with `ADMIN_USER_IDS` unset, a non-admin UUID, and an allowlisted UUID. Confirm the probe is independent of report generation and every response has `Cache-Control: no-store`.
+11. Exercise the client tri-state explicitly: an absent profile forces onboarding and shows the banner, while a failed profile RPC neither routes nor shows it. Verify banner dismissal is isolated by user ID.

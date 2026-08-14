@@ -455,6 +455,28 @@
     font-size: 13px; line-height: 1.65;
   }
   .draft-banner strong { color: var(--accent); }
+  .onboarding-banner {
+    display: none; align-items: center; justify-content: space-between; gap: 18px;
+    margin-bottom: 24px; padding: 15px 18px; border: 1px solid rgba(29,185,84,.4);
+    border-left: 4px solid var(--green); border-radius: 8px;
+    background: rgba(29,185,84,.08); color: #cfe8d7; font-size: 13px; line-height: 1.55;
+  }
+  .onboarding-banner a { color: var(--green); font-weight: 700; }
+  .onboarding-banner-dismiss {
+    flex: 0 0 auto; border: 0; background: transparent; color: #9aa19c;
+    font-size: 20px; line-height: 1; cursor: pointer;
+  }
+  .admin-wrap { max-width: 1180px; margin: 0 auto; }
+  .admin-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .admin-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; }
+  .admin-refresh { width: auto; margin: 0; padding: 10px 16px; font-size: 14px; }
+  .admin-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  .admin-table { width: 100%; min-width: 980px; border-collapse: collapse; }
+  .admin-table th, .admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 12px; }
+  .admin-table th { color: var(--green); font: 600 10px/1.4 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
+  .admin-table td { color: #c7c7c7; }
+  .admin-table tr:last-child td { border-bottom: 0; }
+  .admin-status { padding: 24px; color: var(--muted); text-align: center; }
   .legal-article {
     padding: 34px 38px; border: 1px solid var(--border);
     border-radius: 14px; background: var(--surface);
@@ -987,10 +1009,15 @@
   <div class="tab" data-tab="map" onclick="switchTab('map')">Map</div>
   <div class="tab" data-tab="messages" onclick="switchTab('messages')">Messages<span class="tab-unread-badge" id="messages-unread-badge">0</span></div>
   <div class="tab" data-tab="pricing" onclick="switchTab('pricing')">Pricing</div>
+  <div class="tab" id="tab-admin" data-tab="admin" style="display:none;" onclick="switchTab('admin')">Admin</div>
   <div class="tab" id="tab-join" onclick="handleJoinNavClick()">Join</div>
 </div>
 
 <div class="main">
+  <div class="onboarding-banner" id="onboarding-banner" role="status">
+    <div><strong>Finish your member profile.</strong> Add your licenses and expertise to appear in the directory. <a href="#" onclick="switchTab('onboarding'); return false;">Complete profile</a></div>
+    <button class="onboarding-banner-dismiss" type="button" aria-label="Dismiss for this session" onclick="dismissOnboardingBanner()">&times;</button>
+  </div>
 
   <!-- WELCOME PANEL -->
   <div class="panel active" id="panel-welcome">
@@ -1410,6 +1437,22 @@
     </div>
   </div>
 
+  <!-- ADMIN PANEL (visibility is cosmetic; the report is server-authorized) -->
+  <div class="panel" id="panel-admin">
+    <div class="admin-wrap">
+      <div class="admin-head">
+        <div>
+          <div class="admin-title">Incomplete Profiles</div>
+          <div class="profile-panel-sub" id="admin-summary">Loading report…</div>
+        </div>
+        <button class="submit-btn admin-refresh" type="button" onclick="loadAdminReport(true)">REFRESH</button>
+      </div>
+      <div class="admin-table-wrap" id="admin-report">
+        <div class="admin-status">Loading report…</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <footer class="site-footer">
@@ -1428,7 +1471,7 @@
 
 <!-- Supabase client library + our data-access wrapper — see SUPABASE_SETUP.md -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="supabase-client.js?v=20260812-tier-abilities"></script>
+<script src="supabase-client.js?v=20260814-onboarding"></script>
 <!-- Stripe checkout wrapper — see STRIPE_SETUP.md -->
 <script src="stripe-client.js"></script>
 
@@ -1500,6 +1543,9 @@ let members         = [];
 let stateCoverageCounts = Object.fromEntries(STATES.map(code => [code, 0]));
 let currentSession   = null;  // Supabase auth session (or null)
 let currentProfile   = null;  // This user's own profile row (or null until they join)
+let profileState     = 'loading'; // loading | absent | present | error
+let adminAuthorized  = false;
+let adminReportLoaded = false;
 let selectedStates   = [];
 let pSelectedStates  = [];
 let emailPrefsRequestToken = 0;
@@ -1552,9 +1598,17 @@ async function refreshStateCoverage() {
 }
 
 async function refreshCurrentProfile() {
-  if (!db.ready || !currentSession) { currentProfile = null; return; }
-  try { currentProfile = await db.profiles.mine(); }
-  catch (e) { console.error(e); currentProfile = null; }
+  currentProfile = null;
+  profileState = 'loading';
+  if (!db.ready || !currentSession) return;
+  try {
+    currentProfile = await db.profiles.mine();
+    profileState = currentProfile ? 'present' : 'absent';
+  } catch (e) {
+    console.error(e);
+    currentProfile = null;
+    profileState = 'error';
+  }
 }
 
 // ── GOOGLE SIGN-IN ──
@@ -1574,10 +1628,12 @@ async function handleGoogleSignIn(response) {
     renderGrid();
     renderMap();
     closeAuthModal();
+    await refreshAdminAccess();
     updateAuthUI();
     await pollMessages();
     showToast('Signed in with Google!');
-    switchTab(readPendingCheckoutIntent() && !currentProfile ? 'onboarding' : 'directory');
+    if (profileState === 'absent') switchTab('onboarding');
+    else if (profileState === 'present') switchTab('directory');
     await maybeResumeCheckout();
   } catch (e) {
     console.error(e);
@@ -1663,10 +1719,12 @@ async function doLogin() {
     renderGrid();
     renderMap();
     closeAuthModal();
+    await refreshAdminAccess();
     updateAuthUI();
     await pollMessages();
     showToast('Welcome back!');
-    switchTab(readPendingCheckoutIntent() && !currentProfile ? 'onboarding' : 'directory');
+    if (profileState === 'absent') switchTab('onboarding');
+    else if (profileState === 'present') switchTab('directory');
     await maybeResumeCheckout();
   } catch (e) {
     showAuthError('login-error', e.message || 'Incorrect email or password.');
@@ -1699,10 +1757,11 @@ async function doSignup() {
   try {
     currentSession = await db.auth.signUpWithPassword(email, password);
     currentProfile = null;
+    profileState = currentSession ? 'absent' : 'loading';
     closeAuthModal();
     updateAuthUI();
     showToast(currentSession ? 'Account created! Now complete your profile.' : 'Check your email to confirm your account.');
-    if (currentSession) switchTab(readPendingCheckoutIntent() ? 'onboarding' : 'profile');
+    if (currentSession) switchTab('onboarding');
   } catch (e) {
     showAuthError('signup-error', e.message || 'Could not create your account.');
   } finally {
@@ -1716,6 +1775,9 @@ async function doLogout() {
   await db.auth.signOut();
   currentSession = null;
   currentProfile = null;
+  profileState = 'loading';
+  adminAuthorized = false;
+  adminReportLoaded = false;
   welcomeSelfHealAttempted = false;
   activeThreadOtherUserId = null;
   threadsCache = [];
@@ -1758,6 +1820,8 @@ function updateAuthUI() {
   document.getElementById('user-badge').style.display         = loggedIn ? ''     : 'none';
   document.getElementById('header-pill-members').style.display= loggedIn ? ''     : 'none';
   document.getElementById('header-pill-states').style.display = loggedIn ? ''     : 'none';
+  document.getElementById('tab-admin').style.display          = loggedIn && adminAuthorized ? '' : 'none';
+  updateOnboardingBanner();
 
   const m = getCurrentMember();
 
@@ -1766,6 +1830,79 @@ function updateAuthUI() {
     document.getElementById('header-name').textContent = name;
     refreshHeaderAvatar(acct, m);
     updateStats();
+  }
+}
+
+function onboardingBannerDismissalKey() {
+  const userId = getCurrentAccount()?.id;
+  return userId ? 'im_onboarding_banner_dismissed:' + userId : '';
+}
+
+function updateOnboardingBanner() {
+  const banner = document.getElementById('onboarding-banner');
+  const key = onboardingBannerDismissalKey();
+  let dismissed = false;
+  if (key) {
+    try { dismissed = sessionStorage.getItem(key) === '1'; } catch {}
+  }
+  banner.style.display = getCurrentAccount() && profileState === 'absent' && !dismissed ? 'flex' : 'none';
+}
+
+function dismissOnboardingBanner() {
+  const key = onboardingBannerDismissalKey();
+  if (key) {
+    try { sessionStorage.setItem(key, '1'); } catch {}
+  }
+  updateOnboardingBanner();
+}
+
+async function refreshAdminAccess() {
+  adminAuthorized = false;
+  adminReportLoaded = false;
+  if (!currentSession || !window.adminIncompleteProfiles) {
+    updateAuthUI();
+    return;
+  }
+  try {
+    await window.adminIncompleteProfiles.probe();
+    adminAuthorized = true;
+  } catch {
+    adminAuthorized = false;
+  }
+  updateAuthUI();
+}
+
+function formatAdminDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+}
+
+async function loadAdminReport(force) {
+  if (!adminAuthorized || (adminReportLoaded && !force)) return;
+  const report = document.getElementById('admin-report');
+  const summary = document.getElementById('admin-summary');
+  report.innerHTML = '<div class="admin-status">Loading report…</div>';
+  summary.textContent = 'Loading report…';
+  try {
+    const result = await window.adminIncompleteProfiles.report();
+    const users = result.users || [];
+    const rows = users.map(user =>
+      '<tr><td>' + esc(user.email || '—') + '</td><td>' + esc(formatAdminDate(user.created_at)) +
+      '</td><td>' + esc(formatAdminDate(user.last_sign_in_at)) + '</td><td>' +
+      esc(formatAdminDate(user.email_confirmed_at)) + '</td><td>' + esc(user.nudge_count) +
+      '</td><td>' + esc(formatAdminDate(user.nudged_at)) + '</td><td>' +
+      (user.opted_out ? 'Yes' : 'No') + '</td></tr>'
+    ).join('');
+    report.innerHTML = users.length
+      ? '<table class="admin-table"><thead><tr><th>Email</th><th>Created</th><th>Last sign-in</th><th>Email confirmed</th><th>Nudges</th><th>Last nudge</th><th>Opted out</th></tr></thead><tbody>' + rows + '</tbody></table>'
+      : '<div class="admin-status">No incomplete profiles.</div>';
+    summary.textContent = String(result.total || 0) + ' incomplete profile' +
+      (Number(result.total) === 1 ? '' : 's') + (result.truncated ? ' (report truncated)' : '');
+    adminReportLoaded = true;
+  } catch (error) {
+    report.innerHTML = '<div class="admin-status">Could not load the report.</div>';
+    summary.textContent = error.message || 'Could not load the report.';
   }
 }
 
@@ -1970,6 +2107,7 @@ async function handlePhotoUpload(input) {
     const blob = await (await fetch(dataUrl)).blob();
     const croppedFile = new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
     currentProfile = await db.profiles.uploadPhoto(croppedFile);
+    profileState = currentProfile ? 'present' : 'absent';
     await refreshMembers();
     await refreshStateCoverage();
     loadProfilePanel();
@@ -1990,11 +2128,12 @@ async function confirmDeleteAccount() {
   try {
     if (currentProfile) await db.profiles.deleteMine();
     currentProfile = null;
+    profileState = 'absent';
     await refreshMembers();
     await refreshStateCoverage();
     updateAuthUI();
     populateFilters(); renderGrid(); renderMap(); updateWelcomeStats();
-    switchTab('welcome');
+    switchTab('onboarding');
     showToast('Profile removed from the directory.');
   } catch (e) {
     showToast(e.message || 'Could not delete your profile.');
@@ -2235,7 +2374,8 @@ async function pollMessages() {
   try {
     const previousTier = currentProfile?.tier;
     await refreshCurrentProfile();
-    if (previousTier !== currentProfile?.tier) {
+    updateAuthUI();
+    if (profileState === 'present' && previousTier !== currentProfile?.tier) {
       await refreshMembers();
       await refreshStateCoverage();
       populateFilters();
@@ -2642,7 +2782,7 @@ function switchTab(tab) {
   }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  ['welcome','directory','map','onboarding','profile','messages','pricing','privacy','terms'].forEach(name => {
+  ['welcome','directory','map','onboarding','profile','messages','pricing','privacy','terms','admin'].forEach(name => {
     const panel = document.getElementById('panel-' + name);
     if (panel) panel.classList.toggle('active', name === tab);
   });
@@ -2650,6 +2790,7 @@ function switchTab(tab) {
   if (tab === 'messages') renderMessagesTab();
   if (tab === 'map') renderMap();
   if (tab === 'pricing') renderPricing();
+  if (tab === 'admin') loadAdminReport(false);
 }
 
 function handleJoinNavClick() {
@@ -2695,6 +2836,7 @@ async function submitForm() {
       bio: document.getElementById('f-bio').value.trim(),
       fb: document.getElementById('f-fb').value.trim()
     });
+    profileState = currentProfile ? 'present' : 'absent';
     await sendWelcomeAfterProfileSave();
     await refreshMembers();
     await refreshStateCoverage();
@@ -2741,6 +2883,7 @@ async function init() {
 
   currentSession = await db.auth.getSession();
   await refreshCurrentProfile();
+  await refreshAdminAccess();
   await maybeSelfHealWelcome();
   await refreshMembers();
   await refreshStateCoverage();
@@ -2756,10 +2899,15 @@ async function init() {
   // Resume a valid cross-tab checkout intent after initial session restoration.
   await maybeResumeCheckout();
 
-  // If already logged in, go straight to directory.
+  // Route only after a successful profile load. An RPC error leaves the
+  // current panel unchanged and must never impersonate an absent profile.
   if (getCurrentAccount()) {
-    switchTab(readPendingCheckoutIntent() && !currentProfile ? 'onboarding' : 'directory');
-    if (new URLSearchParams(window.location.search).get('tab') === 'messages') switchTab('messages');
+    if (profileState === 'absent') {
+      switchTab('onboarding');
+    } else if (profileState === 'present') {
+      switchTab('directory');
+      if (new URLSearchParams(window.location.search).get('tab') === 'messages') switchTab('messages');
+    }
   }
 
   // Pick up "?checkout=success|cancelled" after returning from Stripe
@@ -2773,6 +2921,7 @@ async function init() {
     if (!!session !== wasLoggedIn) {
       welcomeSelfHealAttempted = false;
       await refreshCurrentProfile();
+      await refreshAdminAccess();
       await maybeSelfHealWelcome();
       await refreshMembers();
       await refreshStateCoverage();
@@ -2781,6 +2930,7 @@ async function init() {
       renderMap();
       updateAuthUI();
       if (!session) activeThreadOtherUserId = null;
+      if (session && !wasLoggedIn && profileState === 'absent') switchTab('onboarding');
       await pollMessages();
     }
     await maybeResumeCheckout();

@@ -11,7 +11,7 @@ function docker(args,o={}){return spawnSync('docker',args,{encoding:'utf8',input
 function psql(sql,o={}){return docker(['exec','-i',container,'psql','-X','-v','ON_ERROR_STOP=1','-Atq','-U','postgres','-d',database],{input:sql,timeout:o.timeout||30000});}
 function psqlAsync(sql){return new Promise(resolve=>{const c=spawn('docker',['exec','-i',container,'psql','-X','-v','ON_ERROR_STOP=1','-Atq','-U','postgres','-d',database],{stdio:['pipe','pipe','pipe']});let stdout='',stderr='';c.stdout.setEncoding('utf8');c.stderr.setEncoding('utf8');c.stdout.on('data',x=>stdout+=x);c.stderr.on('data',x=>stderr+=x);c.on('close',status=>resolve({status,stdout,stderr}));c.stdin.end(sql);});}
 function assertSql(sql,expected){const r=psql(sql);if(r.status!==0)throw new Error(r.stderr.trim()||'psql failed');return r.stdout.trim()===expected;}
-const ids={low:'10000000-0000-4000-8000-000000000001',high:'20000000-0000-4000-8000-000000000002',outsider:'30000000-0000-4000-8000-000000000003',thread:'40000000-0000-4000-8000-000000000004',message:'50000000-0000-4000-8000-000000000005'};
+const ids={low:'10000000-0000-4000-8000-000000000001',high:'20000000-0000-4000-8000-000000000002',outsider:'30000000-0000-4000-8000-000000000003',thread:'40000000-0000-4000-8000-000000000004',message:'50000000-0000-4000-8000-000000000005',cascade:'60000000-0000-4000-8000-000000000006',validation:'70000000-0000-4000-8000-000000000007'};
 try{
  const started=docker(['run','--rm','-d','--name',container,'-e','POSTGRES_PASSWORD=test-only','-e','POSTGRES_DB='+database,'postgres:15'],{timeout:120000});
  if(started.status!==0)throw new Error(started.stderr.trim()||'docker run failed');
@@ -65,6 +65,20 @@ insert into public.messages(id,thread_id,sender_id,body) values ('${ids.message}
  const tierClaim=`begin;update public.profiles set tier='pro' where user_id='${ids.high}' and tier='free' returning user_id;select pg_sleep(0.5);commit;`;
  const tr=await Promise.all([psqlAsync(tierClaim),psqlAsync(tierClaim)]),tw=tr.reduce((n,r)=>n+r.stdout.split(ids.high).length-1,0);
  report('concurrent CAS tier transition has one owner',tr.every(r=>r.status===0)&&tw===1,'owners='+tw);
+ const nudgePrivileges=assertSql(`set role authenticated;select has_table_privilege('authenticated','public.onboarding_nudges','select')::text||','||has_table_privilege('authenticated','public.onboarding_nudges','insert')::text||','||has_table_privilege('authenticated','public.onboarding_nudges','update')::text||','||has_table_privilege('authenticated','public.onboarding_nudges','delete')::text;`,'false,false,false,false');
+ const anonNudgeRead=psql(`set role anon;select * from public.onboarding_nudges;`);
+ const authNudgeRead=psql(`set role authenticated;select * from public.onboarding_nudges;`);
+ const authNudgeWrite=psql(`set role authenticated;insert into public.onboarding_nudges(user_id) values ('${ids.low}');`);
+ report('onboarding_nudges is unreadable and unwritable by browser roles',nudgePrivileges&&anonNudgeRead.status!==0&&authNudgeRead.status!==0&&authNudgeWrite.status!==0);
+ const nudgeSeed=psql(`insert into public.onboarding_nudges(user_id) values ('${ids.low}');`);if(nudgeSeed.status!==0)throw new Error(nudgeSeed.stderr.trim()||'nudge fixture setup failed');
+ const nudgeClaim=`begin;update public.onboarding_nudges set nudge_count=1,nudged_at=now(),updated_at=now() where user_id='${ids.low}' and nudge_count=0 and opted_out=false returning user_id;select pg_sleep(0.5);commit;`;
+ const nr=await Promise.all([psqlAsync(nudgeClaim),psqlAsync(nudgeClaim)]),nw=nr.reduce((n,r)=>n+r.stdout.split(ids.low).length-1,0);
+ report('concurrent nudge CAS updates have one winner',nr.every(r=>r.status===0)&&nw===1,'winners='+nw);
+ const nudgeCheck=psql(`update public.onboarding_nudges set nudge_count=3 where user_id='${ids.low}';`);
+ report('onboarding_nudges enforces the two-send cap',nudgeCheck.status!==0,nudgeCheck.status===0?'unexpected success':nudgeCheck.stderr.trim());
+ const cascadeSetup=psql(`insert into auth.users(id,email) values ('${ids.cascade}','cascade@example.test');insert into public.onboarding_nudges(user_id) values ('${ids.cascade}');delete from auth.users where id='${ids.cascade}';`);
+ if(cascadeSetup.status!==0)throw new Error(cascadeSetup.stderr.trim()||'nudge cascade setup failed');
+ report('deleting an auth user cascades to onboarding_nudges',assertSql(`select count(*) from public.onboarding_nudges where user_id='${ids.cascade}';`,'0'));
  const visibility=assertSql(`set role authenticated;select has_table_privilege('authenticated','public.message_threads','select')::text||','||has_column_privilege('authenticated','public.message_threads','id','select')::text||','||has_column_privilege('authenticated','public.message_threads','notify_claimed_low','select')::text;`,'false,true,false');
  const forbidden=psql(`set role authenticated;select notify_claimed_low from public.message_threads limit 1;`);
  report('message_threads exposes only browser-safe columns',visibility&&forbidden.status!==0);
@@ -108,6 +122,22 @@ insert into public.messages(id,thread_id,sender_id,body) values ('${ids.message}
  if(recipientUpgrade.status!==0)throw new Error(recipientUpgrade.stderr.trim()||'recipient upgrade failed');
  const proRecipient=assertSql(`set role authenticated;select set_config('request.jwt.claim.sub','${ids.low}',false);select (public.send_message('${ids.outsider}','New thread to Pro')).sender_id;`,ids.low+'\n'+ids.low);
  report('Basic sender can start a new thread to a Pro recipient',proRecipient);
+
+ const validationUser=psql(`insert into auth.users(id,email) values ('${ids.validation}','validation@example.test');`);
+ if(validationUser.status!==0)throw new Error(validationUser.stderr.trim()||'validation user setup failed');
+ const invalidProfileCalls=[
+  ['upsert_my_profile rejects a blank first name',`select set_config('request.jwt.claim.sub','${ids.validation}',false);select * from public.upsert_my_profile('   ','Member','Agency','NY',array['NY'],array['Life Insurance'],'{}','Bio','');`],
+  ['upsert_my_profile rejects a blank last name',`select set_config('request.jwt.claim.sub','${ids.validation}',false);select * from public.upsert_my_profile('Valid','   ','Agency','NY',array['NY'],array['Life Insurance'],'{}','Bio','');`],
+  ['upsert_my_profile rejects empty states',`select set_config('request.jwt.claim.sub','${ids.validation}',false);select * from public.upsert_my_profile('Valid','Member','Agency','NY','{}'::text[],array['Life Insurance'],'{}','Bio','');`],
+  ['upsert_my_profile rejects empty lines of business',`select set_config('request.jwt.claim.sub','${ids.validation}',false);select * from public.upsert_my_profile('Valid','Member','Agency','NY',array['NY'],'{}'::text[],'{}','Bio','');`],
+  ['upsert_my_profile rejects a null home state',`select set_config('request.jwt.claim.sub','${ids.validation}',false);select * from public.upsert_my_profile('Valid','Member','Agency',null,array['NY'],array['Life Insurance'],'{}','Bio','');`],
+  ['upsert_my_profile rejects an unknown home state',`select set_config('request.jwt.claim.sub','${ids.validation}',false);select * from public.upsert_my_profile('Valid','Member','Agency','ZZ',array['NY'],array['Life Insurance'],'{}','Bio','');`]
+ ];
+ for(const [name,sql] of invalidProfileCalls){const result=psql('set role authenticated;'+sql);report(name,result.status!==0,result.status===0?'unexpected success':result.stderr.trim());}
+ const validUpsert=assertSql(`set role authenticated;select set_config('request.jwt.claim.sub','${ids.validation}',false);select count(*)::text||':'||string_agg(key,',' order by key)||'|'||bool_and(key<>all(array['stripe_customer_id','stripe_subscription_id','email_notifications','welcomed_at']))::text from public.upsert_my_profile('  Valid  ','  Member  ','  Agency  ','NY',array['NY'],array['Life Insurance'],'{}','  Bio  ','  https://example.com  ') p cross join lateral jsonb_object_keys(to_jsonb(p)) keys(key);`,ids.validation+'\n'+profileColumns);
+ report('valid upsert_my_profile succeeds and still returns exactly 15 public columns',validUpsert);
+ const trimmedUpsert=assertSql(`set role authenticated;select set_config('request.jwt.claim.sub','${ids.validation}',false);select first_name||'|'||last_name||'|'||agency||'|'||bio||'|'||facebook_url from public.get_my_profile();`,ids.validation+'\nValid|Member|Agency|Bio|https://example.com');
+ report('upsert_my_profile trims all scalar text inputs',trimmedUpsert);
 }catch(error){report('integration setup/execution',false,error.message);}
 finally{const stopped=docker(['stop',container],{timeout:30000});if(stopped.status!==0&&!/No such container/i.test(stopped.stderr||''))report('container teardown',false,stopped.stderr.trim());else report('container teardown',true);}
 if(failed)process.exitCode=1;
