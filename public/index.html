@@ -2786,6 +2786,7 @@ function switchTab(tab) {
     const panel = document.getElementById('panel-' + name);
     if (panel) panel.classList.toggle('active', name === tab);
   });
+  if (tab === 'directory') renderGrid();
   if (tab === 'profile') loadProfilePanel();
   if (tab === 'messages') renderMessagesTab();
   if (tab === 'map') renderMap();
